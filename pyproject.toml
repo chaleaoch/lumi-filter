@@ -16,10 +16,11 @@ license = {text = "MIT"}
 [tool.pdm]
 distribution = false
 
-[tool.pdm.dev-dependencies]
+
+[dependency-groups]
 dev = [
     "flask>=3.1.1",
     "peewee>=3.18.2",
     "python-dotenv>=1.1.1",
-    "psycopg2>=2.9.10",
+    "psycopg2-binary>=2.9.10",
 ]

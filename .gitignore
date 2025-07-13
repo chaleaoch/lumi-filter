@@ -209,3 +209,5 @@ __marimo__/
 flasker
 tmp/
 tmp.*
+/src/app.py
+.vscode/

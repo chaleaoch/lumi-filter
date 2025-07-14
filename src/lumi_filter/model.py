@@ -1,6 +1,8 @@
+from typing import Iterable
+
 import peewee
 
-from lumi_filter.backend import PeeweeBackend
+from lumi_filter.backend import IterableBackend, PeeweeBackend
 from lumi_filter.field import BaseField
 
 
@@ -40,6 +42,8 @@ class Model(metaclass=Meta):
     def filter(cls, data, request_args):
         if isinstance(data, peewee.ModelSelect):
             Backend = PeeweeBackend
+        elif isinstance(data, Iterable):
+            Backend = IterableBackend
         for req_field_name, req_value in request_args.items():
             if req_field_name not in cls.__supported_query_key_field_dict__:
                 continue

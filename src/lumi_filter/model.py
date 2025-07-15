@@ -105,7 +105,7 @@ class Model(metaclass=ModelMeta):
         self.request_args = request_args
 
     @classmethod
-    def filter(cls, data, request_args):
+    def cls_filter(cls, data, request_args):
         if isinstance(data, peewee.ModelSelect):
             Backend = PeeweeBackend
         elif isinstance(data, Iterable):
@@ -124,7 +124,7 @@ class Model(metaclass=ModelMeta):
         return data
 
     @classmethod
-    def order(cls, data, request_args):
+    def cls_order(cls, data, request_args):
         if isinstance(data, peewee.ModelSelect):
             Backend = PeeweeBackend
         elif isinstance(data, Iterable):
@@ -141,3 +141,14 @@ class Model(metaclass=ModelMeta):
                 req_field_name = req_field_name[1:]
             data = Backend.order(data, req_field_name, is_negative)
         return data
+
+    def filter(self):
+        self.data = self.__class__.cls_filter(self.data, self.request_args)
+        return self
+
+    def order(self):
+        self.data = self.__class__.cls_order(self.data, self.request_args)
+        return self
+
+    def result(self):
+        return self.data

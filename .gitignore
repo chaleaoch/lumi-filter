@@ -211,3 +211,4 @@ tmp/
 tmp.*
 /src/app.py
 .vscode/
+logs

@@ -2,7 +2,7 @@ import datetime
 import decimal
 
 
-class BaseField:
+class FilterField:
     def __init__(self, request_arg_name=None, source=None):
         self.request_arg_name = request_arg_name
         self.source = source
@@ -13,7 +13,7 @@ class BaseField:
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte", "in", "nin"}
 
 
-class IntField(BaseField):
+class IntField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
 
     def parse_value(self, value):
@@ -23,11 +23,11 @@ class IntField(BaseField):
             return None, False
 
 
-class StrField(BaseField):
+class StrField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte", "in", "nin"}
 
 
-class DecimalField(BaseField):
+class DecimalField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
 
     def parse_value(self, value):
@@ -37,7 +37,7 @@ class DecimalField(BaseField):
             return None, False
 
 
-class BooleanField(BaseField):
+class BooleanField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {""}
 
     def parse_value(self, value):
@@ -47,7 +47,7 @@ class BooleanField(BaseField):
             return None, False
 
 
-class DateField(BaseField):
+class DateField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
 
     def parse_value(self, value):
@@ -57,7 +57,7 @@ class DateField(BaseField):
             return None, False
 
 
-class DateTimeField(BaseField):
+class DateTimeField(FilterField):
     SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
 
     def parse_value(self, value):

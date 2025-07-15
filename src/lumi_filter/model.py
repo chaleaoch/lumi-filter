@@ -1,6 +1,9 @@
+import datetime
+import decimal
 from typing import Iterable
 
 import peewee
+import pydantic
 
 from lumi_filter.backend import IterableBackend, PeeweeBackend
 from lumi_filter.field import (
@@ -25,6 +28,14 @@ class MetaModel:
         peewee.DateField: DateField,
         peewee.DateTimeField: DateTimeField,
     }
+    PD_FILTER_MAP = {
+        str: StrField,
+        int: IntField,
+        decimal.Decimal: DecimalField,
+        bool: BooleanField,
+        datetime.date: DateField,
+        datetime.datetime: DateTimeField,
+    }
 
     def __init__(self, schema=None):
         self.schema = schema
@@ -32,6 +43,7 @@ class MetaModel:
     def get_filter_fields(self):
         ret = {}
         pw_filter_mapping = ClassHierarchyMapping(self.PW_FILTER_MAP)
+        pd_filter_mapping = ClassHierarchyMapping(self.PD_FILTER_MAP)
         if self.schema is not None:
             if issubclass(self.schema, peewee.Model):
                 for attr_name, pw_field in self.schema._meta.fields.items():
@@ -39,6 +51,12 @@ class MetaModel:
                         pw_field.__class__, FilterField
                     )
                     ret[attr_name] = filter_field_class(source=pw_field)
+            elif issubclass(self.schema, pydantic.BaseModel):
+                for attr_name, pydantic_field in self.schema.model_fields.items():
+                    filter_field_class = pd_filter_mapping.get(
+                        pydantic_field.annotation, FilterField
+                    )
+                    ret[attr_name] = filter_field_class()
         return ret
 
 

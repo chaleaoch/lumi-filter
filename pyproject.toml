@@ -2,23 +2,20 @@
 name = "lumi_filter"
 version = "0.1.0"
 description = "Default template for PDM package"
-authors = [
-    {name = "chaleaoch", email = "chaleaoch@gmail.com"},
-]
-dependencies = [
-    "psycopg2>=2.9.10",
-]
+authors = [{ name = "chaleaoch", email = "chaleaoch@gmail.com" }]
+dependencies = ["psycopg2>=2.9.10"]
 requires-python = "==3.12.*"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 
 [tool.pdm]
 distribution = false
 
 
-[dependency-groups]
+[tool.pdm.dev-dependencies]
 dev = [
+    "pydantic>=2.11.7",
     "flask>=3.1.1",
     "peewee>=3.18.2",
     "python-dotenv>=1.1.1",

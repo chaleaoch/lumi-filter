@@ -1,11 +1,11 @@
 import logging
 import operator
+from functools import partial
 
 import peewee
 
 from lumi_filter.operator import (
     generic_ilike_operator,
-    generic_is_null_operator,
     generic_like_operator,
 )
 
@@ -21,11 +21,13 @@ class PeeweeBackend:
         "gt": operator.gt,
         "lt": operator.lt,
         "in": operator.mod,
-        "nin": operator.pow,
+        "iin": operator.pow,
     }
 
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
+        if lookup_expr in ["in", "iin"]:
+            value = f"%{value}%"
         return query.where(
             cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](peewee_field, value)
         )
@@ -63,14 +65,22 @@ class IterableBackend:
         "gt": operator.gt,
         "lt": operator.lt,
         "in": generic_like_operator,
-        "nin": generic_ilike_operator,
-        "is_null": generic_is_null_operator,
+        "iin": generic_ilike_operator,
+        # "is_null": generic_is_null_operator,
     }
+
+    @classmethod
+    def match_nested_value(cls, item_dict, key, value, lookup_expr):
+        for k in key.split("."):
+            item_dict = item_dict[k]
+        return cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](item_dict, value)
 
     @classmethod
     def filter(cls, data, key, value, lookup_expr):
         return filter(
-            lambda x: cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](x[key], value),
+            partial(
+                cls.match_nested_value, key=key, value=value, lookup_expr=lookup_expr
+            ),
             data,
         )
 

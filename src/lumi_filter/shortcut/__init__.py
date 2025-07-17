@@ -1,1 +1,1 @@
-from .shortcut import AutoQuery  # noqa: F401
+from .shortcut import AutoQueryModel  # noqa: F401

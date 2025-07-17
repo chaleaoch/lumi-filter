@@ -11,24 +11,32 @@ from lumi_filter.map import pd_filter_mapping, pw_filter_mapping
 
 
 class MetaModel:
-    def __init__(self, schema=None):
+    def __init__(self, schema=None, fields=None, extra_field=None):
         self.schema = schema
+        self.fields = fields or []
+        self.extra_field = extra_field or {}
 
     def get_filter_fields(self):
         ret = {}
         if self.schema is not None:
             if issubclass(self.schema, peewee.Model):
                 for attr_name, pw_field in self.schema._meta.fields.items():
+                    if self.fields and attr_name not in self.fields:
+                        continue
                     filter_field_class = pw_filter_mapping.get(
                         pw_field.__class__, FilterField
                     )
                     ret[attr_name] = filter_field_class(source=pw_field)
             elif issubclass(self.schema, pydantic.BaseModel):
                 for attr_name, pydantic_field in self.schema.model_fields.items():
+                    if self.fields and attr_name not in self.fields:
+                        continue
                     filter_field_class = pd_filter_mapping.get(
                         pydantic_field.annotation, FilterField
                     )
                     ret[attr_name] = filter_field_class()
+        for attr_name, field in self.extra_field.items():
+            ret[attr_name] = field
         return ret
 
 

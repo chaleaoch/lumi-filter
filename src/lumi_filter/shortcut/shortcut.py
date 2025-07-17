@@ -48,8 +48,6 @@ class AutoQueryModel:
                         attrs[new_key.replace(".", "_")] = pd_filter_mapping.get(
                             type(value), FilterField
                         )(request_arg_name=new_key, source=new_key)
-
-                attrs[key] = pd_filter_mapping.get(type(key), FilterField)()
         else:
             logger.error("Unsupported data type for AutoQuery: %s", type(cls.data))
             raise TypeError("Unsupported data type for AutoQuery")

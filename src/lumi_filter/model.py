@@ -28,13 +28,27 @@ class MetaModel:
                     )
                     ret[attr_name] = filter_field_class(source=pw_field)
             elif issubclass(self.schema, pydantic.BaseModel):
-                for attr_name, pydantic_field in self.schema.model_fields.items():
-                    if self.fields and attr_name not in self.fields:
-                        continue
-                    filter_field_class = pd_filter_mapping.get(
-                        pydantic_field.annotation, FilterField
-                    )
-                    ret[attr_name] = filter_field_class()
+                stack = [(self.schema.model_fields, "")]
+                while stack:
+                    model_fields, key_prefix = stack.pop()
+                    for key, pydantic_field in model_fields.items():
+                        new_key = f"{key_prefix}.{key}" if key_prefix else key
+                        if issubclass(pydantic_field.annotation, pydantic.BaseModel):
+                            stack.append(
+                                (
+                                    pydantic_field.annotation.model_fields,
+                                    new_key,
+                                )
+                            )
+                        else:
+                            if self.fields and new_key not in self.fields:
+                                continue
+                            filter_field_class = pd_filter_mapping.get(
+                                pydantic_field.annotation, FilterField
+                            )
+                            ret[new_key.replace(".", "_")] = filter_field_class(
+                                request_arg_name=new_key, source=new_key
+                            )
         for attr_name, field in self.extra_field.items():
             ret[attr_name] = field
         return ret

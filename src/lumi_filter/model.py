@@ -27,13 +27,17 @@ class MetaModel:
                         pw_field.__class__, FilterField
                     )
                     ret[attr_name] = filter_field_class(source=pw_field)
-            elif issubclass(self.schema, pydantic.BaseModel):
+            elif isinstance(self.schema, type) and issubclass(
+                self.schema, pydantic.BaseModel
+            ):
                 stack = [(self.schema.model_fields, "")]
                 while stack:
                     model_fields, key_prefix = stack.pop()
                     for key, pydantic_field in model_fields.items():
                         new_key = f"{key_prefix}.{key}" if key_prefix else key
-                        if issubclass(pydantic_field.annotation, pydantic.BaseModel):
+                        if isinstance(pydantic_field.annotation, type) and issubclass(
+                            pydantic_field.annotation, pydantic.BaseModel
+                        ):
                             stack.append(
                                 (
                                     pydantic_field.annotation.model_fields,

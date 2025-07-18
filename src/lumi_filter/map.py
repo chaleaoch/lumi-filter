@@ -1,3 +1,5 @@
+"""Field mapping configurations for different data sources."""
+
 import datetime
 import decimal
 
@@ -13,7 +15,8 @@ from lumi_filter.field import (
 )
 from lumi_filter.util import ClassHierarchyMapping
 
-PW_FILTER_MAP = {
+# Peewee field type to filter field mapping
+PEEWEE_FIELD_MAP = {
     peewee.CharField: StrField,
     peewee.TextField: StrField,
     peewee.IntegerField: IntField,
@@ -22,7 +25,9 @@ PW_FILTER_MAP = {
     peewee.DateField: DateField,
     peewee.DateTimeField: DateTimeField,
 }
-PD_FILTER_MAP = {
+
+# Python data type to filter field mapping
+PYTHON_TYPE_MAP = {
     str: StrField,
     int: IntField,
     decimal.Decimal: DecimalField,
@@ -31,5 +36,6 @@ PD_FILTER_MAP = {
     datetime.datetime: DateTimeField,
 }
 
-pw_filter_mapping = ClassHierarchyMapping(PW_FILTER_MAP)
-pd_filter_mapping = ClassHierarchyMapping(PD_FILTER_MAP)
+# Create mapping instances
+pw_filter_mapping = ClassHierarchyMapping(PEEWEE_FIELD_MAP)
+pd_filter_mapping = ClassHierarchyMapping(PYTHON_TYPE_MAP)

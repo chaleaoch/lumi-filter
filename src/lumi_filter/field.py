@@ -3,18 +3,23 @@ import decimal
 
 
 class FilterField:
+    """Base class for filter fields with common functionality."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
+
     def __init__(self, request_arg_name=None, source=None):
         self.request_arg_name = request_arg_name
         self.source = source
 
     def parse_value(self, value):
+        """Parse and validate the input value. Returns (parsed_value, is_valid)."""
         return value, True
-
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte", "in", "nin"}
 
 
 class IntField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
+    """Integer field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
     def parse_value(self, value):
         try:
@@ -24,44 +29,63 @@ class IntField(FilterField):
 
 
 class StrField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte", "in", "nin"}
+    """String field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
 
 
 class DecimalField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
+    """Decimal field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
     def parse_value(self, value):
         try:
             return decimal.Decimal(value), True
-        except Exception:
+        except (ValueError, TypeError, decimal.InvalidOperation):
             return None, False
 
 
 class BooleanField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {""}
+    """Boolean field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({""})
 
     def parse_value(self, value):
-        try:
-            return bool(value), True
-        except Exception:
-            return None, False
+        if isinstance(value, bool):
+            return value, True
+        if isinstance(value, str):
+            lower_value = value.lower()
+            if lower_value in ("true", "1", "yes", "on"):
+                return True, True
+            elif lower_value in ("false", "0", "no", "off"):
+                return False, True
+        return None, False
 
 
 class DateField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
+    """Date field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
     def parse_value(self, value):
+        if isinstance(value, datetime.date):
+            return value, True
         try:
-            return datetime.strptime(value, "%Y-%m-%d").date(), True
-        except Exception:
+            return datetime.datetime.strptime(value, "%Y-%m-%d").date(), True
+        except (ValueError, TypeError):
             return None, False
 
 
 class DateTimeField(FilterField):
-    SUPPORTED_LOOKUP_EXPR = {"", "!", "gt", "lt", "gte", "lte"}
+    """DateTime field filter."""
+
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
     def parse_value(self, value):
+        if isinstance(value, datetime.datetime):
+            return value, True
         try:
-            return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S"), True
-        except Exception:
+            return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S"), True
+        except (ValueError, TypeError):
             return None, False

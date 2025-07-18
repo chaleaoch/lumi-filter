@@ -24,8 +24,21 @@ class PeeweeBackend:
         "iin": operator.pow,
     }
 
+    def __init__(self, query, ordering_extra_fields):
+        self.field_names = set()
+        for node in query.selected_columns:
+            if isinstance(node, peewee.Alias):
+                self.field_names.add(node.alias_name)
+            elif isinstance(node, peewee.Field):
+                self.field_names.add(node.column_name)
+            else:
+                logger.warning(
+                    f"Unsupported field type in order_by: {type(node)}. Using default ordering.",
+                )
+        self.field_names = self.field_names | ordering_extra_fields
+
     @classmethod
-    def filter(cls, query, peewee_field, value, lookup_expr):
+    def filter(self, query, peewee_field, value, lookup_expr):
         if lookup_expr in ["in", "iin"]:
             value = f"%{value}%"
         if isinstance(peewee_field, type) and not issubclass(
@@ -33,30 +46,15 @@ class PeeweeBackend:
         ):
             raise TypeError(f"Expected a peewee.Field, got {type(peewee_field)}.")
         return query.where(
-            cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](peewee_field, value)
+            self.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](peewee_field, value)
         )
 
-    @classmethod
-    def get_node_name(cls, node):
-        if isinstance(node, peewee.Alias):
-            return node.alias_name
-        elif isinstance(node, peewee.Field):
-            return node.column_name
-        else:
-            logger.warning(
-                "Unsupported field type in order_by: %s. Using default ordering.",
-                type(node),
-            )
-            return ""
-
-    @classmethod
-    def order(cls, query, peewee_field_name, is_negative=False):
-        for node in query.selected_columns:
-            if peewee_field_name == cls.get_node_name(node):
-                if is_negative:
-                    query = query.order_by(peewee.SQL(peewee_field_name + " DESC"))
-                else:
-                    query = query.order_by(peewee.SQL(peewee_field_name + " ASC"))
+    def order(self, query, peewee_field_name, is_negative=False):
+        if peewee_field_name in self.field_names:
+            if is_negative:
+                query = query.order_by(peewee.SQL(peewee_field_name + " DESC"))
+            else:
+                query = query.order_by(peewee.SQL(peewee_field_name + " ASC"))
         return query
 
 

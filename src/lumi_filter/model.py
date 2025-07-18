@@ -11,10 +11,13 @@ from lumi_filter.map import pd_filter_mapping, pw_filter_mapping
 
 
 class MetaModel:
-    def __init__(self, schema=None, fields=None, extra_field=None):
+    def __init__(
+        self, schema=None, fields=None, extra_field=None, ordering_extra_field=None
+    ):
         self.schema = schema
         self.fields = fields or []
         self.extra_field = extra_field or {}
+        self.ordering_extra_field = ordering_extra_field or set()
 
     def get_filter_fields(self):
         ret = {}
@@ -107,6 +110,7 @@ class ModelMeta(type):
                 f"Model {name} has fields with different source types: {', '.join(source_types)}. All fields must have the same source type."
             )
         attrs["__supported_query_key_field_dict__"] = supported_query_key_field_dict
+        attrs["__ordering_extra_field__"] = meta_model.ordering_extra_field
         return super().__new__(cls, name, bases, attrs)
 
 
@@ -137,9 +141,9 @@ class Model(metaclass=ModelMeta):
     @classmethod
     def cls_order(cls, data, request_args):
         if isinstance(data, peewee.ModelSelect):
-            Backend = PeeweeBackend
+            backend = PeeweeBackend(data, cls.__ordering_extra_field__)
         elif isinstance(data, Iterable):
-            Backend = IterableBackend
+            backend = IterableBackend
 
         ordering = request_args.get("ordering", "")
         if not ordering:
@@ -150,7 +154,7 @@ class Model(metaclass=ModelMeta):
             if req_field_name.startswith("-"):
                 is_negative = True
                 req_field_name = req_field_name[1:]
-            data = Backend.order(data, req_field_name, is_negative)
+            data = backend.order(data, req_field_name, is_negative)
         return data
 
     def filter(self):

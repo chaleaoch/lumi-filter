@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Any, Iterable
 
 import peewee
 import pydantic
@@ -19,11 +19,11 @@ class MetaModel:
     def get_filter_fields(self):
         ret = {}
         if self.schema is not None:
-            if issubclass(self.schema, peewee.Model):
+            if isinstance(self.schema, type) and issubclass(self.schema, peewee.Model):
                 for attr_name, pw_field in self.schema._meta.fields.items():
                     if self.fields and attr_name not in self.fields:
                         continue
-                    filter_field_class = pw_filter_mapping.get(
+                    filter_field_class: Any = pw_filter_mapping.get(
                         pw_field.__class__, FilterField
                     )
                     ret[attr_name] = filter_field_class(source=pw_field)
@@ -66,9 +66,10 @@ class ModelMeta(type):
         meta_model = MetaModel(**meta_options)
         # attrs have higher priority
         attrs = meta_model.get_filter_fields() | attrs
+        filter_fields = []  # 暂时还没用到, 但是总感觉将来有用
+        source_types = set()
         for field_name, field in attrs.items():
             if isinstance(field, FilterField):
-                field.name = field_name
                 if field.request_arg_name is None:
                     field.request_arg_name = field_name
                 if field.source is None:
@@ -77,6 +78,15 @@ class ModelMeta(type):
                     raise ValueError(
                         f"field.request_arg_name of {field_name} cannot contain '__' because this syntax is reserved for lookups."
                     )
+                filter_fields.append(field)
+                if issubclass(type(field.source), str):
+                    source_types.add("str")
+                elif isinstance(field.source, type) and issubclass(
+                    field.source, peewee.Field
+                ):
+                    source_types.add("peewee field")
+                else:
+                    source_types.add("other")
                 for lookup_expr in field.SUPPORTED_LOOKUP_EXPR:
                     if lookup_expr == "":
                         supported_query_key = field.request_arg_name
@@ -88,7 +98,10 @@ class ModelMeta(type):
                         "field": field,
                         "lookup_expr": lookup_expr,
                     }
-
+        if len(source_types) > 1:
+            raise ValueError(
+                f"Model {name} has fields with different source types: {', '.join(source_types)}. All fields must have the same source type."
+            )
         attrs["__supported_query_key_field_dict__"] = supported_query_key_field_dict
         return super().__new__(cls, name, bases, attrs)
 

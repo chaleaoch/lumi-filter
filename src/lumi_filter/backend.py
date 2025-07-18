@@ -28,6 +28,10 @@ class PeeweeBackend:
     def filter(cls, query, peewee_field, value, lookup_expr):
         if lookup_expr in ["in", "iin"]:
             value = f"%{value}%"
+        if isinstance(peewee_field, type) and not issubclass(
+            peewee_field, peewee.Field
+        ):
+            raise TypeError(f"Expected a peewee.Field, got {type(peewee_field)}.")
         return query.where(
             cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr](peewee_field, value)
         )

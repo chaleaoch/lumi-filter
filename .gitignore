@@ -205,10 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
-flasker
 tmp/
-tmp.*
-/src/app.py
 .vscode/
 logs

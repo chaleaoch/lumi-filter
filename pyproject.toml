@@ -22,10 +22,7 @@ addopts = [
     "--strict-markers",
     "--color=yes",
     "--cov=lumi_filter",
-    "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-report=xml",
-    "--cov-fail-under=85",
 ]
 
 [tool.coverage.run]

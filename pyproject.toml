@@ -4,12 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "peewee>=3.18.2",
-    "pydantic>=2.11.7",
-]
+dependencies = ["peewee>=3.18.2", "pydantic>=2.11.7"]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.1",
-]
+dev = ["pytest>=8.4.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# output configuration
+addopts = ["-v", "--tb=short", "--strict-markers", "--color=yes"]

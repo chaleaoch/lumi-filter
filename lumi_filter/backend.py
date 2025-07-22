@@ -10,7 +10,15 @@ logger = logging.getLogger("lumi_filter.backend")
 
 
 class PeeweeBackend:
-    """Backend for filtering and ordering Peewee queries."""
+    """Backend for filtering and ordering Peewee queries.
+
+    This backend provides functionality to apply filters and ordering
+    to Peewee ORM queries in a consistent manner.
+
+    :param query: The Peewee query to apply filters and ordering to
+    :param ordering_extra_fields: Additional fields allowed for ordering
+    :type ordering_extra_fields: set or None
+    """
 
     LOOKUP_EXPR_OPERATOR_MAP = {
         "": operator.eq,
@@ -29,7 +37,12 @@ class PeeweeBackend:
             self.field_names.update(ordering_extra_fields)
 
     def _extract_field_names(self, query):
-        """Extract field names from query selected columns."""
+        """Extract field names from query selected columns.
+
+        :param query: The Peewee query object
+        :return: Set of field names extracted from the query
+        :rtype: set
+        """
         field_names = set()
         for node in query.selected_columns:
             field_name = self._get_node_name(node)
@@ -38,7 +51,12 @@ class PeeweeBackend:
         return field_names
 
     def _get_node_name(self, node):
-        """Get field name from a query node."""
+        """Get field name from a query node.
+
+        :param node: The query node to extract name from
+        :return: Field name or None if unsupported
+        :rtype: str or None
+        """
         if isinstance(node, peewee.Alias):
             return node.name
         elif isinstance(node, peewee.Field):
@@ -51,7 +69,15 @@ class PeeweeBackend:
 
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
-        """Apply filter to the query."""
+        """Apply filter to the query.
+
+        :param query: The Peewee query to filter
+        :param peewee_field: The field to filter on
+        :param value: The value to filter by
+        :param lookup_expr: The lookup expression for filtering
+        :return: Filtered query
+        :raises TypeError: If peewee_field is not a Peewee Field instance
+        """
         if lookup_expr == "in":
             if isinstance(query.model._meta.database, peewee.SqliteDatabase):
                 value = f"*{value}*"
@@ -67,7 +93,14 @@ class PeeweeBackend:
         return query.where(operator_func(peewee_field, value))
 
     def order(self, query, field_name, is_negative=False):
-        """Apply ordering to the query."""
+        """Apply ordering to the query.
+
+        :param query: The Peewee query to order
+        :param field_name: Name of the field to order by
+        :param is_negative: Whether to order in descending order
+        :type is_negative: bool
+        :return: Ordered query
+        """
         if field_name not in self.field_names:
             return query
 
@@ -76,7 +109,11 @@ class PeeweeBackend:
 
 
 class IterableBackend:
-    """Backend for filtering and ordering iterable data."""
+    """Backend for filtering and ordering iterable data.
+
+    This backend provides functionality to apply filters and ordering
+    to iterable data structures like lists and dictionaries.
+    """
 
     LOOKUP_EXPR_OPERATOR_MAP = {
         "": operator.eq,
@@ -91,14 +128,28 @@ class IterableBackend:
 
     @classmethod
     def _get_nested_value(cls, item, key):
-        """Get nested value from item using dot notation."""
+        """Get nested value from item using dot notation.
+
+        :param item: The item to extract value from
+        :param key: The key path using dot notation (e.g., 'user.name')
+        :return: The nested value
+        :raises KeyError: If key path doesn't exist
+        """
         for k in key.split("."):
             item = item[k]
         return item
 
     @classmethod
     def _match_item(cls, item, key, value, lookup_expr):
-        """Check if item matches the filter criteria."""
+        """Check if item matches the filter criteria.
+
+        :param item: The item to check
+        :param key: The key to filter on
+        :param value: The value to match against
+        :param lookup_expr: The lookup expression for matching
+        :return: True if item matches, True on error (permissive)
+        :rtype: bool
+        """
         try:
             item_value = cls._get_nested_value(item, key)
             operator_func = cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr]
@@ -108,7 +159,14 @@ class IterableBackend:
 
     @classmethod
     def filter(cls, data, key, value, lookup_expr):
-        """Filter the data based on criteria."""
+        """Filter the data based on criteria.
+
+        :param data: The iterable data to filter
+        :param key: The key to filter on
+        :param value: The value to filter by
+        :param lookup_expr: The lookup expression for filtering
+        :return: Filtered iterable
+        """
         return filter(
             partial(cls._match_item, key=key, value=value, lookup_expr=lookup_expr),
             data,
@@ -116,7 +174,14 @@ class IterableBackend:
 
     @classmethod
     def order(cls, data, key, is_reverse=False):
-        """Sort the data by key."""
+        """Sort the data by key.
+
+        :param data: The iterable data to sort
+        :param key: The key to sort by
+        :param is_reverse: Whether to sort in reverse order
+        :type is_reverse: bool
+        :return: Sorted data
+        """
         try:
             return sorted(
                 data, key=lambda x: cls._get_nested_value(x, key), reverse=is_reverse

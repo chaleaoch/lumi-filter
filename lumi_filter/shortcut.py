@@ -1,3 +1,9 @@
+"""Shortcut utilities for automatic model generation and request argument compatibility.
+
+This module provides convenience utilities for automatically generating
+filter models from data sources and handling different request argument formats.
+"""
+
 import logging
 from typing import Iterable
 
@@ -11,6 +17,17 @@ logger = logging.getLogger("lumi_filter.shortcut")
 
 
 class AutoQueryModel:
+    """Automatic query model generator.
+
+    This class automatically generates filter models based on the structure
+    of the provided data source, supporting both Peewee ORM queries and
+    iterable data structures.
+
+    :param data: The data source to generate model from
+    :param request_args: Request arguments for filtering
+    :type request_args: dict
+    """
+
     def __new__(cls, data, request_args):
         cls.data = data
         cls.request_args = request_args
@@ -60,6 +77,17 @@ class AutoQueryModel:
 
 
 def compatible_request_args(request_args):
+    """Convert request arguments to compatible format.
+
+    This function converts request arguments from alternative syntax formats
+    to the standard lookup expression format used by the filter system.
+
+    :param request_args: Dictionary of request arguments in alternative format
+    :type request_args: dict
+    :return: Dictionary of converted request arguments
+    :rtype: dict
+    :raises ValueError: If unsupported lookup expression is encountered
+    """
     ret = {}
     map = {
         "==": "",

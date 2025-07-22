@@ -3,7 +3,16 @@ import decimal
 
 
 class FilterField:
-    """Base class for filter fields with common functionality."""
+    """Base class for filter fields with common functionality.
+
+    This class provides the foundation for all filter field types,
+    handling basic parsing and validation operations.
+
+    :param request_arg_name: Name of the request argument
+    :type request_arg_name: str or None
+    :param source: Source field or attribute name
+    :type source: str or None
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
 
@@ -12,12 +21,21 @@ class FilterField:
         self.source = source
 
     def parse_value(self, value):
-        """Parse and validate the input value. Returns (parsed_value, is_valid)."""
+        """Parse and validate the input value.
+
+        :param value: The input value to parse
+        :return: Tuple of (parsed_value, is_valid)
+        :rtype: tuple
+        """
         return value, True
 
 
 class IntField(FilterField):
-    """Integer field filter."""
+    """Integer field filter.
+
+    Handles parsing and validation of integer values for filtering operations.
+    Supports comparison operations like equality, greater than, less than, etc.
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
@@ -29,13 +47,21 @@ class IntField(FilterField):
 
 
 class StrField(FilterField):
-    """String field filter."""
+    """String field filter.
+
+    Handles parsing and validation of string values for filtering operations.
+    Supports text matching operations including contains, equality, and comparisons.
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
 
 
 class DecimalField(FilterField):
-    """Decimal field filter."""
+    """Decimal field filter.
+
+    Handles parsing and validation of decimal values for filtering operations.
+    Provides precise decimal arithmetic for financial and scientific calculations.
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
@@ -47,7 +73,12 @@ class DecimalField(FilterField):
 
 
 class BooleanField(FilterField):
-    """Boolean field filter."""
+    """Boolean field filter.
+
+    Handles parsing and validation of boolean values for filtering operations.
+    Accepts various string representations of boolean values including
+    'true', 'false', '1', '0', 'yes', 'no', 'on', 'off'.
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({""})
 
@@ -64,7 +95,11 @@ class BooleanField(FilterField):
 
 
 class DateField(FilterField):
-    """Date field filter."""
+    """Date field filter.
+
+    Handles parsing and validation of date values for filtering operations.
+    Accepts datetime.date objects or ISO format date strings (YYYY-MM-DD).
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 
@@ -78,7 +113,11 @@ class DateField(FilterField):
 
 
 class DateTimeField(FilterField):
-    """DateTime field filter."""
+    """DateTime field filter.
+
+    Handles parsing and validation of datetime values for filtering operations.
+    Accepts datetime.datetime objects or ISO format datetime strings (YYYY-MM-DDTHH:MM:SS).
+    """
 
     SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
 

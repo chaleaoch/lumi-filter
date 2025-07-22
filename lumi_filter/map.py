@@ -1,4 +1,12 @@
-"""Field mapping configurations for different data sources."""
+"""Field mapping configurations for different data sources.
+
+This module provides mapping configurations that automatically map
+different data source field types (Peewee ORM fields, Python types)
+to appropriate filter field classes.
+
+The mappings enable automatic field type detection and conversion
+for seamless integration with various data sources.
+"""
 
 import datetime
 import decimal

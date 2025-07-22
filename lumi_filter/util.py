@@ -1,9 +1,23 @@
+"""Utility classes for enhanced mapping functionality.
+
+This module provides utility classes that extend standard mapping behavior
+to support advanced lookup patterns and inheritance-based resolution.
+"""
+
 import inspect
 from collections.abc import MutableMapping
 
 
 class ClassHierarchyMapping(MutableMapping):
-    """Mapping that supports class hierarchy lookups via Method Resolution Order."""
+    """Mapping that supports class hierarchy lookups via Method Resolution Order.
+
+    This mapping class enables lookups that traverse the class hierarchy using
+    Python's Method Resolution Order (MRO), allowing for inheritance-based
+    field type resolution.
+
+    :param mapping: Initial mapping data
+    :type mapping: dict or None
+    """
 
     def __init__(self, mapping=None):
         self.data = dict(mapping) if mapping else {}

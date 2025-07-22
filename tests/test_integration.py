@@ -81,45 +81,47 @@ class TestIntegrationScenarios:
         ]
 
     def test_hr_search_active_employees(self):
-        """HR 场景：搜索活跃员工"""
-        # 查找所有活跃的员工，按薪资降序排列
+        """HR scenario: Search active employees"""
+        # Find all active employees, sorted by salary in descending order
         request_args = {"is_active": "true", "ordering": "-salary"}
 
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 验证结果
-        assert len(results) == 3  # 只有3个活跃员工
+        # Verify results
+        assert len(results) == 3  # Only 3 active employees
         assert all(user["is_active"] for user in results)
 
-        # 验证排序：薪资降序
+        # Verify sorting: salary descending
         salaries = [user["salary"] for user in results]
         assert salaries == sorted(salaries, reverse=True)
 
-        # 验证具体结果
-        assert results[0]["username"] == "diana_prince"  # 最高薪资
-        assert results[-1]["username"] == "alice_smith"  # 最低薪资（在活跃员工中）
+        # Verify specific results
+        assert results[0]["username"] == "diana_prince"  # Highest salary
+        assert (
+            results[-1]["username"] == "alice_smith"
+        )  # Lowest salary (among active employees)
 
     def test_recruitment_age_filter(self):
-        """招聘场景：按年龄范围筛选候选人"""
-        # 查找年龄在 25-30 之间的用户
+        """Recruitment scenario: Filter candidates by age range"""
+        # Find users aged between 25-30
         request_args = {"age__gte": "25", "age__lte": "30", "ordering": "age"}
 
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 验证年龄范围
+        # Verify age range
         assert len(results) == 3
         for user in results:
             assert 25 <= user["age"] <= 30
 
-        # 验证排序
+        # Verify sorting
         ages = [user["age"] for user in results]
-        assert ages == [26, 28, 29]  # 升序排列
+        assert ages == [26, 28, 29]  # Ascending order
 
     def test_payroll_salary_analysis(self):
-        """薪资分析场景：高薪员工统计"""
-        # 查找薪资超过 80000 的活跃员工
+        """Salary analysis scenario: High-salary employee statistics"""
+        # Find active employees with salary above 80000
         request_args = {
             "salary__gte": "80000",
             "is_active": "true",
@@ -129,36 +131,36 @@ class TestIntegrationScenarios:
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 验证结果
+        # Verify results
         assert len(results) == 2
         for user in results:
             assert user["salary"] >= decimal.Decimal("80000")
             assert user["is_active"] is True
 
-        # 验证排序：按用户名字母顺序
+        # Verify sorting: alphabetical order by username
         usernames = [user["username"] for user in results]
         assert usernames == ["bob_jones", "diana_prince"]
 
     def test_email_domain_search(self):
-        """邮箱域名搜索场景"""
-        # 查找使用 company.com 域名的用户
+        """Email domain search scenario"""
+        # Find users with company.com domain
         request_args = {"email__in": "company.com", "ordering": "join_date"}
 
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 验证结果
+        # Verify results
         assert len(results) == 2
         for user in results:
             assert "company.com" in user["email"]
 
-        # 验证排序：按加入日期
+        # Verify sorting: by join date
         join_dates = [user["join_date"] for user in results]
-        assert join_dates[0] < join_dates[1]  # 日期升序
+        assert join_dates[0] < join_dates[1]  # Ascending order
 
     def test_complex_multi_filter_scenario(self):
-        """复杂多条件过滤场景"""
-        # 业务需求：查找30岁以下的活跃员工，薪资在70000-90000之间，按年龄升序排列
+        """Complex multi-condition filtering scenario"""
+        # Business requirement: Find active employees under 30, with salary between 70000-90000, ordered by age ascending
         request_args = {
             "age__lt": "30",
             "is_active": "true",
@@ -170,7 +172,7 @@ class TestIntegrationScenarios:
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 验证所有条件
+        # Verify all conditions
         assert len(results) == 1
         user = results[0]
 
@@ -180,8 +182,8 @@ class TestIntegrationScenarios:
         assert user["username"] == "alice_smith"
 
     def test_no_results_scenario(self):
-        """无结果场景：过于严格的筛选条件"""
-        # 查找年龄超过50的用户（在我们的测试数据中不存在）
+        """No results scenario: overly strict filtering conditions"""
+        # Find users over 50 years old (does not exist in our test data)
         request_args = {"age__gt": "50"}
 
         model = UserFilterModel(self.sample_users, request_args)
@@ -190,25 +192,25 @@ class TestIntegrationScenarios:
         assert len(results) == 0
 
     def test_invalid_input_handling(self):
-        """处理无效输入的场景"""
-        # 包含无效的年龄值和无效字段
+        """Handle invalid input scenario"""
+        # Contains invalid age value and invalid field
         request_args = {
-            "age": "invalid_age",  # 无效年龄
-            "nonexistent_field": "value",  # 不存在的字段
-            "username": "alice_smith",  # 有效过滤条件
+            "age": "invalid_age",  # Invalid age
+            "nonexistent_field": "value",  # Non-existent field
+            "username": "alice_smith",  # Valid filter condition
             "ordering": "username",
         }
 
         model = UserFilterModel(self.sample_users, request_args)
         results = list(model.filter().order().result())
 
-        # 应该忽略无效输入，只应用有效的过滤条件
+        # Should ignore invalid input, only apply valid filter conditions
         assert len(results) == 1
         assert results[0]["username"] == "alice_smith"
 
     def test_performance_with_large_dataset(self):
-        """大数据集性能测试（模拟）"""
-        # 创建更大的数据集
+        """Large dataset performance test (simulation)"""
+        # Create larger dataset
         large_dataset = []
         for i in range(100):
             large_dataset.append(
@@ -216,34 +218,34 @@ class TestIntegrationScenarios:
                     "id": i,
                     "username": f"user_{i}",
                     "email": f"user{i}@example.com",
-                    "age": 20 + (i % 40),  # 年龄 20-59
-                    "is_active": i % 3 != 0,  # 大约 2/3 的用户活跃
+                    "age": 20 + (i % 40),  # Age 20-59
+                    "is_active": i % 3 != 0,  # About 2/3 of users are active
                     "salary": decimal.Decimal(
                         str(50000 + (i % 50) * 1000)
-                    ),  # 薪资 50000-99000
+                    ),  # Salary 50000-99000
                     "join_date": datetime.date(2020, 1, 1) + datetime.timedelta(days=i),
                 }
             )
 
-        # 执行复杂查询
+        # Execute complex query
         request_args = {
             "age__gte": "25",
             "age__lt": "35",
             "is_active": "true",
             "salary__gte": "60000",
-            "ordering": "-salary",  # 简化排序，只按薪资降序
+            "ordering": "-salary",  # Simplified sorting, only by salary descending
         }
 
         model = UserFilterModel(large_dataset, request_args)
         results = list(model.filter().order().result())
 
-        # 验证结果的正确性（不关注性能，只验证逻辑）
+        # Verify result correctness (not focusing on performance, only validating logic)
         for user in results:
             assert 25 <= user["age"] < 35
             assert user["is_active"] is True
             assert user["salary"] >= decimal.Decimal("60000")
 
-        # 验证排序：按薪资降序
+        # Verify sorting: by salary descending
         if len(results) > 1:
             salaries = [user["salary"] for user in results]
             assert salaries == sorted(salaries, reverse=True)

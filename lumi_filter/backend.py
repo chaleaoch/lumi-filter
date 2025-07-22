@@ -40,7 +40,7 @@ class PeeweeBackend:
     def _get_node_name(self, node):
         """Get field name from a query node."""
         if isinstance(node, peewee.Alias):
-            return node.alias_name
+            return node.name
         elif isinstance(node, peewee.Field):
             return node.column_name
         else:

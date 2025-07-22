@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = ["peewee>=3.18.2", "pydantic>=2.11.7"]
 
 [dependency-groups]
-dev = ["pytest>=8.4.1"]
+dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "pytest-mock>=3.14.1"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -16,4 +16,33 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 
 # output configuration
-addopts = ["-v", "--tb=short", "--strict-markers", "--color=yes"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--color=yes",
+    "--cov=lumi_filter",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=85",
+]
+
+[tool.coverage.run]
+source = ["lumi_filter"]
+omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/site-packages/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

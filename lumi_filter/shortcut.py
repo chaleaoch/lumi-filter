@@ -37,6 +37,9 @@ class AutoQueryModel:
             cls.data = list(cls.data)
             if not cls.data:
                 raise ValueError("Data cannot be empty for AutoQuery.")
+            # Check if first item is a dict
+            if not isinstance(cls.data[0], dict):
+                raise TypeError("Unsupported data type for AutoQuery")
             stack = [(cls.data[0], "")]
             while stack:
                 current_dict, key_prefix = stack.pop()
@@ -69,18 +72,18 @@ def compatible_request_args(request_args):
         "ILIKE": "iin",
     }
     for key, value in request_args.items():
-        key, lookup_expr = key.split("(", 1)
+        key_part, lookup_expr = key.split("(", 1)
         lookup_expr = lookup_expr[:-1]
-        if lookup_expr in map:
-            request_args[key] = map[lookup_expr]
-        else:
+        if lookup_expr not in map:
             raise ValueError(f"Unsupported lookup expression: {lookup_expr}")
-        if lookup_expr == "!":
-            ret[f"{key}!"] = value
-        elif lookup_expr == "":
-            ret[key] = value
-        elif lookup_expr in ["in", "iin"]:
-            ret[f"{key}__{map[lookup_expr]}"] = value[1:-1] if len(value) > 2 else value
+
+        mapped_expr = map[lookup_expr]
+        if mapped_expr == "!":
+            ret[f"{key_part}!"] = value
+        elif mapped_expr == "":
+            ret[key_part] = value
+        elif mapped_expr in ["in", "iin"]:
+            ret[f"{key_part}__{mapped_expr}"] = value[1:-1] if len(value) > 2 else value
         else:
-            ret[f"{key}__{map[lookup_expr]}"] = value
+            ret[f"{key_part}__{mapped_expr}"] = value
     return ret

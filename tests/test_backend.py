@@ -86,6 +86,7 @@ class TestPeeweeBackend:
 
         # Check that field names were extracted
         expected_fields = {
+            "id",
             "username",
             "email",
             "age",

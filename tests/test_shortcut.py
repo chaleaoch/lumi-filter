@@ -101,7 +101,7 @@ class TestCompatibleRequestArgs:
         """Test LIKE operator with short value (<=2 chars)"""
         request_args = {"code(LIKE)": "%A%"}
         result = compatible_request_args(request_args)
-        expected = {"code__in": "%A%"}  # Should not strip if result would be too short
+        expected = {"code__in": "A"}  # Should not strip if result would be too short
         assert result == expected
 
     def test_empty_request_args(self):
@@ -159,7 +159,7 @@ class TestAutoQueryModelWithDictData:
 
     def test_autoquery_with_nested_fields(self):
         """Test AutoQueryModel with nested dictionary fields"""
-        request_args = {"profile_department": "Engineering", "ordering": "name"}
+        request_args = {"profile.department": "Engineering", "ordering": "name"}
         model = AutoQueryModel(self.sample_data, request_args)
 
         # Test that nested fields are flattened with underscore

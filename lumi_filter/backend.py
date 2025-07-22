@@ -52,7 +52,12 @@ class PeeweeBackend:
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
         """Apply filter to the query."""
-        if lookup_expr in ("in", "iin"):
+        if lookup_expr == "in":
+            if isinstance(query.model._meta.database, peewee.SqliteDatabase):
+                value = f"*{value}*"
+            else:
+                value = f"%{value}%"
+        elif lookup_expr == "iin":
             value = f"%{value}%"
 
         if not isinstance(peewee_field, peewee.Field):

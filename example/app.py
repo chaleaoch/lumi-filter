@@ -1,49 +1,92 @@
 """Flask application entrypoint for the example.
 
 Run with:
-	uvicorn-like: (Flask dev server)
-		python -m example.app
+    uvicorn-like: (Flask dev server)
+        python -m example.app
 
 Feature demo endpoints:
-	Peewee basic:            GET /peewee/products
-	Peewee extra ordering:   GET /peewee/products/extra-ordering?ordering=-name_len
-	Generic iterable:        GET /generic/users
-	Auto Peewee:             GET /auto/peewee/products
-	Auto Pydantic:           GET /auto/pydantic/products
+    Peewee basic:            GET /peewee/products
+    Peewee extra ordering:   GET /peewee/products/extra-ordering?ordering=-name_len
+    Generic iterable:        GET /generic/users
+    Auto Peewee:             GET /auto/peewee/products
+    Auto Pydantic:           GET /auto/pydantic/products
 
 Examples:
-	curl 'http://127.0.0.1:5000/peewee/products?price__gte=1&ordering=-price'
-	curl 'http://127.0.0.1:5000/peewee/products/extra-ordering?ordering=-name_len'
-	curl 'http://127.0.0.1:5000/generic/users?profile_bio__iin=python'
-	curl 'http://127.0.0.1:5000/auto/pydantic/products?name__in=Al'
+    curl 'http://127.0.0.1:5000/peewee/products?price__gte=1&ordering=-price'
+    curl 'http://127.0.0.1:5000/peewee/products/extra-ordering?ordering=-name_len'
+    curl 'http://127.0.0.1:5000/generic/users?profile_bio__iin=python'
+    curl 'http://127.0.0.1:5000/auto/pydantic/products?name__in=Al'
 """
-
-from __future__ import annotations
 
 from flask import Flask
 
-from .app.api.peewee_basic import bp as peewee_basic_bp  # type: ignore
-from .app.api.peewee_extra_ordering import (
-	bp as peewee_extra_ordering_bp,  # type: ignore
-)
-from .app.api.generic_iterable import bp as generic_iterable_bp  # type: ignore
-from .app.api.auto_filter_peewee import bp as auto_peewee_bp  # type: ignore
-from .app.api.auto_filter_pydantic import bp as auto_pydantic_bp  # type: ignore
+from app.api.auto_filter_peewee import bp as auto_peewee_bp
+from app.api.auto_filter_pydantic import bp as auto_pydantic_bp
+from app.api.generic_iterable import bp as generic_iterable_bp
+from app.api.peewee_basic import bp as peewee_basic_bp
+from app.api.peewee_extra_ordering import bp as peewee_extra_ordering_bp
+from app.db_model import Category, Product
+from extentions import database
+
+
+def init_db():
+    database.connect(reuse_if_open=True)
+    database.create_tables([Category, Product])
+
+    if Category.select().count() == 0 and Product.select().count() == 0:
+        # Compact one-line seed data list.
+        sample = [
+            {"name": "Apple", "price": 1.20, "is_active": True, "category": "Fruit"},
+            {"name": "Orange", "price": 2.50, "is_active": True, "category": "Citrus"},
+            {"name": "Banana", "price": 0.80, "is_active": True, "category": "Tropical"},
+            {"name": "Watermelon", "price": 6.30, "is_active": False, "category": "Melon"},
+            {"name": "Grape", "price": 3.10, "is_active": True, "category": "Berry"},
+            {"name": "Strawberry", "price": 4.50, "is_active": True, "category": "Berry"},
+            {"name": "Blueberry", "price": 5.10, "is_active": True, "category": "Berry"},
+            {"name": "Mango", "price": 2.90, "is_active": True, "category": "Tropical"},
+            {"name": "Pineapple", "price": 3.70, "is_active": True, "category": "Tropical"},
+            {"name": "Lemon", "price": 0.60, "is_active": True, "category": "Citrus"},
+            {"name": "Lime", "price": 0.55, "is_active": True, "category": "Citrus"},
+            {"name": "Peach", "price": 2.20, "is_active": True, "category": "Stone"},
+            {"name": "Cherry", "price": 6.80, "is_active": True, "category": "Stone"},
+            {"name": "Pear", "price": 1.85, "is_active": True, "category": "Fruit"},
+            {"name": "Kiwi", "price": 1.10, "is_active": True, "category": "Tropical"},
+            {"name": "Papaya", "price": 2.40, "is_active": True, "category": "Tropical"},
+            {"name": "Dragonfruit", "price": 7.90, "is_active": True, "category": "Tropical"},
+            {"name": "Avocado", "price": 3.30, "is_active": True, "category": "Berry"},
+            {"name": "Plum", "price": 2.05, "is_active": True, "category": "Stone"},
+            {"name": "Apricot", "price": 2.15, "is_active": True, "category": "Stone"},
+            {"name": "Coconut", "price": 4.20, "is_active": False, "category": "Tropical"},
+            {"name": "Grapefruit", "price": 1.60, "is_active": True, "category": "Citrus"},
+            {"name": "Pomegranate", "price": 5.60, "is_active": True, "category": "Berry"},
+            {"name": "Fig", "price": 3.95, "is_active": True, "category": "Fruit"},
+            {"name": "Date", "price": 6.10, "is_active": True, "category": "Fruit"},
+        ]
+
+        with database.atomic():
+            # create categories first
+            cat_map: dict[str, Category] = {}
+            for cat_name in sorted({p["category"] for p in sample}):
+                cat_map[cat_name] = Category.create(name=cat_name)
+            # create products referencing categories
+            for item in sample:
+                cat = cat_map[item.pop("category")]
+                Product.create(**item, category=cat)
 
 
 def create_app() -> Flask:
-	app = Flask(__name__)
-	app.register_blueprint(peewee_basic_bp)
-	app.register_blueprint(peewee_extra_ordering_bp)
-	app.register_blueprint(generic_iterable_bp)
-	app.register_blueprint(auto_peewee_bp)
-	app.register_blueprint(auto_pydantic_bp)
-	return app
+    app = Flask(__name__)
+    init_db()
+    app.register_blueprint(peewee_basic_bp)
+    app.register_blueprint(peewee_extra_ordering_bp)
+    app.register_blueprint(generic_iterable_bp)
+    app.register_blueprint(auto_peewee_bp)
+    app.register_blueprint(auto_pydantic_bp)
+    return app
 
 
 app = create_app()
 
 
 if __name__ == "__main__":  # pragma: no cover
-	app.run(debug=True)
-
+    app.run(debug=True)

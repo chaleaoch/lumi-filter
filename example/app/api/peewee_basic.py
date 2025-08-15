@@ -12,11 +12,12 @@ Examples:
   /peewee/products?name__in=app (LIKE match, substring)
   /peewee/products?is_active=true&ordering=name
 """
+
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from ..db_model import Product
+from ..db_model import Category, Product
 from ..filter_model import FilterProduct
 
 bp = Blueprint("peewee_basic", __name__, url_prefix="/peewee/products")
@@ -30,7 +31,9 @@ def list_products():
         Product.price,
         Product.is_active,
         Product.created_at,
-    )
+        Category.id.alias("category_id"),
+        Category.name.alias("category_name"),
+    ).join(Category)
     request_args = {k: v for k, v in request.args.items() if v not in (None, "")}
     filtered = FilterProduct.cls_filter(query, request_args)
     ordered = FilterProduct.cls_order(filtered, request_args)

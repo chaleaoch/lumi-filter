@@ -11,66 +11,29 @@ test filtering & ordering straight away.
 
 from __future__ import annotations
 
-import datetime
-from pathlib import Path
+from datetime import datetime, timezone
+
 import peewee
-import decimal
 
-DB_PATH = Path(__file__).resolve().parent.parent / "example.db"
-
-
-database = peewee.SqliteDatabase(str(DB_PATH))
+from extentions import database
 
 
 class BaseModel(peewee.Model):
-	class Meta:
-		database = database
+    class Meta:
+        database = database
+
+
+class Category(BaseModel):
+    name = peewee.CharField(max_length=50, unique=True, index=True)
+    created_at = peewee.DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+    def __str__(self) -> str:  # pragma: no cover - repr helper
+        return f"Category<{self.id}:{self.name}>"
 
 
 class Product(BaseModel):
-	"""Product you can list & create.
-
-	Fields kept intentionally small to exercise the different filter
-	field types (str/int/bool/decimal/datetime).
-	"""
-
-	name = peewee.CharField(max_length=120, index=True)
-	price = peewee.DecimalField(max_digits=10, decimal_places=2, auto_round=True)
-	is_active = peewee.BooleanField(default=True, index=True)
-	created_at = peewee.DateTimeField(default=datetime.datetime.utcnow, index=True)
-
-	def to_dict(self):  # Simple serializer for the API layer
-		# self.price is already a Decimal instance when accessed on model
-		# Accessing attribute produces a Decimal; ensure correct type for mypy/pyright
-		price_decimal: decimal.Decimal = decimal.Decimal(str(self.price))
-		return {
-			"id": self.id,
-			"name": self.name,
-			"price": float(price_decimal),
-			"is_active": self.is_active,
-			"created_at": self.created_at.isoformat(),
-		}
-
-
-def _init_db():
-	database.connect(reuse_if_open=True)
-	database.create_tables([Product])
-
-	# Seed only if empty
-	if Product.select().count() == 0:
-		sample = [
-			{"name": "Apple", "price": 1.20, "is_active": True},
-			{"name": "Orange", "price": 2.50, "is_active": True},
-			{"name": "Banana", "price": 0.80, "is_active": True},
-			{"name": "Watermelon", "price": 6.30, "is_active": False},
-			{"name": "Grape", "price": 3.10, "is_active": True},
-		]
-		with database.atomic():
-			for item in sample:
-				Product.create(**item)
-
-
-_init_db()
-
-__all__ = ["Product", "database"]
-
+    name = peewee.CharField(max_length=120)
+    price = peewee.DecimalField(max_digits=10, decimal_places=2, auto_round=True)
+    is_active = peewee.BooleanField(default=True)
+    category = peewee.ForeignKeyField(Category, backref="products", on_delete="CASCADE")
+    created_at = peewee.DateTimeField(default=lambda: datetime.now(timezone.utc))

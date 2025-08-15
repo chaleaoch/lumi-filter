@@ -4,12 +4,13 @@ GET /auto/peewee/products
 
 Uses Meta.schema = Product; all model fields auto filterable.
 """
+
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
-
 from lumi_filter.model import Model
-from ..db_model import Product
+
+from ..db_model import Category, Product
 
 bp = Blueprint("auto_peewee", __name__, url_prefix="/auto/peewee/products")
 
@@ -28,7 +29,9 @@ def list_products_auto():
         Product.price,
         Product.is_active,
         Product.created_at,
-    )
+        Category.id.alias("category_id"),
+        Category.name.alias("category_name"),
+    ).join(Category)
     request_args = {k: v for k, v in request.args.items() if v not in (None, "")}
     filtered = AutoFilterProduct.cls_filter(query, request_args)
     ordered = AutoFilterProduct.cls_order(filtered, request_args)

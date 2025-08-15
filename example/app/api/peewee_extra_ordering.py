@@ -7,16 +7,15 @@ Adds computed column (name_len) allowing ordering by it via:
 
 Also supports all normal filters.
 """
+
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from ..db_model import Product
+from ..db_model import Category, Product
 from ..filter_model import FilterProduct
 
-bp = Blueprint(
-    "peewee_extra_ordering", __name__, url_prefix="/peewee/products/extra-ordering"
-)
+bp = Blueprint("peewee_extra_ordering", __name__, url_prefix="/peewee/products/extra-ordering")
 
 
 @bp.get("")
@@ -28,7 +27,9 @@ def list_products_extra_ordering():
         Product.is_active,
         Product.created_at,
         FilterProduct.name_len_expression(),
-    )
+        Category.id.alias("category_id"),
+        Category.name.alias("category_name"),
+    ).join(Category)
     request_args = {k: v for k, v in request.args.items() if v not in (None, "")}
     filtered = FilterProduct.cls_filter(query, request_args)
     ordered = FilterProduct.cls_order(filtered, request_args)

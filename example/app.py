@@ -1,188 +1,49 @@
-import peewee
-from flask import Flask, jsonify, request
+"""Flask application entrypoint for the example.
 
-from lumi_filter.field import FilterField
-from lumi_filter.model import Model
-from lumi_filter.shortcut import AutoQueryModel
+Run with:
+	uvicorn-like: (Flask dev server)
+		python -m example.app
 
-app = Flask(__name__)
+Feature demo endpoints:
+	Peewee basic:            GET /peewee/products
+	Peewee extra ordering:   GET /peewee/products/extra-ordering?ordering=-name_len
+	Generic iterable:        GET /generic/users
+	Auto Peewee:             GET /auto/peewee/products
+	Auto Pydantic:           GET /auto/pydantic/products
 
-# Database setup
-db = peewee.SqliteDatabase(":memory:")
+Examples:
+	curl 'http://127.0.0.1:5000/peewee/products?price__gte=1&ordering=-price'
+	curl 'http://127.0.0.1:5000/peewee/products/extra-ordering?ordering=-name_len'
+	curl 'http://127.0.0.1:5000/generic/users?profile_bio__iin=python'
+	curl 'http://127.0.0.1:5000/auto/pydantic/products?name__in=Al'
+"""
 
+from __future__ import annotations
 
-class BaseModel(peewee.Model):
-    class Meta:
-        database = db
+from flask import Flask
 
-
-class UserModel(BaseModel):
-    id = peewee.IntegerField(primary_key=True)
-    name = peewee.CharField()
-    age = peewee.IntegerField()
-    email = peewee.CharField()
-    active = peewee.BooleanField()
-    salary = peewee.FloatField()
-
-
-class ProductModel(BaseModel):
-    id = peewee.IntegerField(primary_key=True)
-    name = peewee.CharField()
-    category = peewee.CharField()
-    price = peewee.FloatField()
-    stock = peewee.IntegerField()
-    available = peewee.BooleanField()
-
-
-# Create tables and sample data
-db.create_tables([UserModel, ProductModel])
-
-# Insert sample data
-UserModel.create(
-    id=1, name="Alice", age=25, email="alice@example.com", active=True, salary=50000.0
+from .app.api.peewee_basic import bp as peewee_basic_bp  # type: ignore
+from .app.api.peewee_extra_ordering import (
+	bp as peewee_extra_ordering_bp,  # type: ignore
 )
-UserModel.create(
-    id=2, name="Bob", age=30, email="bob@example.com", active=False, salary=60000.0
-)
-
-ProductModel.create(
-    id=1, name="Laptop", category="Electronics", price=999.99, stock=10, available=True
-)
-ProductModel.create(
-    id=2, name="Chair", category="Furniture", price=149.99, stock=15, available=True
-)
-
-# Sample list data
-USERS = [
-    {
-        "id": 1,
-        "name": "Alice",
-        "age": 25,
-        "email": "alice@example.com",
-        "active": True,
-        "salary": 50000.0,
-    },
-    {
-        "id": 2,
-        "name": "Bob",
-        "age": 30,
-        "email": "bob@example.com",
-        "active": False,
-        "salary": 60000.0,
-    },
-]
+from .app.api.generic_iterable import bp as generic_iterable_bp  # type: ignore
+from .app.api.auto_filter_peewee import bp as auto_peewee_bp  # type: ignore
+from .app.api.auto_filter_pydantic import bp as auto_pydantic_bp  # type: ignore
 
 
-@app.route("/users")
-def get_users():
-    """
-    Get filtered users using AutoQueryModel
-    curl "http://localhost:5000/users?age__gte=30&ordering=salary"
-    """
-    try:
-        model = AutoQueryModel(USERS, request.args)
-        filtered_data = model.filter().order().result()
-
-        # Ensure data is a list for len() calculation
-        if hasattr(filtered_data, "__iter__") and not isinstance(
-            filtered_data, (str, bytes)
-        ):
-            filtered_data = list(filtered_data)
-
-        return jsonify(
-            {
-                "success": True,
-                "count": len(filtered_data)
-                if isinstance(filtered_data, (list, tuple))
-                else 1,
-                "data": filtered_data,
-                "filters": dict(request.args),
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+def create_app() -> Flask:
+	app = Flask(__name__)
+	app.register_blueprint(peewee_basic_bp)
+	app.register_blueprint(peewee_extra_ordering_bp)
+	app.register_blueprint(generic_iterable_bp)
+	app.register_blueprint(auto_peewee_bp)
+	app.register_blueprint(auto_pydantic_bp)
+	return app
 
 
-@app.route("/users_peewee")
-def get_users_peewee():
-    """
-    Get filtered users using Peewee model
-    curl "http://localhost:5000/users_peewee?age__gte=25&ordering=salary"
-    """
-    try:
-        query = UserModel.select()
-        model = AutoQueryModel(query, request.args)
-        filtered_data = model.filter().order().result()
-
-        # Convert Peewee objects to dict and count
-        data = [
-            {
-                "id": u.id,
-                "name": u.name,
-                "age": u.age,
-                "email": u.email,
-                "active": u.active,
-                "salary": u.salary,
-            }
-            for u in filtered_data
-        ]
-
-        return jsonify(
-            {
-                "success": True,
-                "count": len(data),
-                "data": data,
-                "filters": dict(request.args),
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+app = create_app()
 
 
-@app.route("/users_manual")
-def get_users_manual():
-    """
-    Get filtered users using manual Model class
-    curl "http://localhost:5000/users_manual?age__gte=25&ordering=salary"
-    """
+if __name__ == "__main__":  # pragma: no cover
+	app.run(debug=True)
 
-    # Define custom filter model
-    class UserFilter(Model):
-        class Meta:
-            schema = None
-            fields = []
-            extra_field = {
-                "id": FilterField(source="id"),
-                "name": FilterField(source="name"),
-                "age": FilterField(source="age"),
-                "email": FilterField(source="email"),
-                "active": FilterField(source="active"),
-                "salary": FilterField(source="salary"),
-            }
-            ordering_extra_field = {"id", "name", "age", "email", "active", "salary"}
-
-    try:
-        filtered_data = UserFilter(USERS, request.args).filter().order().result()
-
-        # Ensure data is a list for len() calculation
-        if hasattr(filtered_data, "__iter__") and not isinstance(
-            filtered_data, (str, bytes)
-        ):
-            filtered_data = list(filtered_data)
-
-        return jsonify(
-            {
-                "success": True,
-                "count": len(filtered_data)
-                if isinstance(filtered_data, (list, tuple))
-                else 1,
-                "data": filtered_data,
-                "filters": dict(request.args),
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)

@@ -1,13 +1,3 @@
-"""Peewee extra ordering field demo.
-
-GET /peewee/products/extra-ordering
-
-Adds computed column (name_len) allowing ordering by it via:
-  ?ordering=-name_len or ?ordering=name_len
-
-Also supports all normal filters.
-"""
-
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request

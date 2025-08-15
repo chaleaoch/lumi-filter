@@ -31,4 +31,4 @@ class ProductListQuery(BaseModel):
     price__gte: float | None = None
     price__lte: float | None = None
     is_active: bool | None = None
-    ordering: str | None = None  # e.g. "-price,name"
+    ordering: str | None = None

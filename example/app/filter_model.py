@@ -14,7 +14,3 @@ class FilterProduct(Model):
     id = IntField(source=Product.id)
     category_id = IntField(source=Product.category)
     category_name = StrField(source=Category.name)
-
-    class Meta:
-        schema = Product
-        ordering_extra_field = {"name_len"}

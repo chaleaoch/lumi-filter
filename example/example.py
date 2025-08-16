@@ -6,7 +6,7 @@ from app.api.generic_iterable import bp as generic_iterable_bp
 from app.api.peewee_basic import bp as peewee_basic_bp
 from app.api.peewee_extra_ordering import bp as peewee_extra_ordering_bp
 from app.db_model import Category, Product
-from extentions import database
+from extentions import database, db
 
 
 def init_db():
@@ -44,18 +44,18 @@ def init_db():
         ]
 
         with database.atomic():
-            # create categories first
             cat_map: dict[str, Category] = {}
             for cat_name in sorted({p["category"] for p in sample}):
                 cat_map[cat_name] = Category.create(name=cat_name)
-            # create products referencing categories
             for item in sample:
                 cat = cat_map[item.pop("category")]
                 Product.create(**item, category=cat)
+    database.close()
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    db.init_app(app)
     init_db()
     app.register_blueprint(peewee_basic_bp)
     app.register_blueprint(peewee_extra_ordering_bp)
@@ -63,10 +63,3 @@ def create_app() -> Flask:
     app.register_blueprint(auto_peewee_bp)
     app.register_blueprint(auto_pydantic_bp)
     return app
-
-
-app = create_app()
-
-
-if __name__ == "__main__":  # pragma: no cover
-    app.run(debug=True)

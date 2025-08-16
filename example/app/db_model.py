@@ -2,21 +2,16 @@ from datetime import datetime, timezone
 
 import peewee
 
-from extentions import database
+from extentions import db
 
 
-class BaseModel(peewee.Model):
-    class Meta:
-        database = database
-
-
-class Category(BaseModel):
+class Category(db.Model):
     id = peewee.AutoField()
     name = peewee.CharField(max_length=50, unique=True, index=True)
     created_at = peewee.DateTimeField(default=lambda: datetime.now(timezone.utc))
 
 
-class Product(BaseModel):
+class Product(db.Model):
     id = peewee.AutoField()
     name = peewee.CharField(max_length=120)
     price = peewee.DecimalField(max_digits=10, decimal_places=2, auto_round=True)

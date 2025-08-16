@@ -208,3 +208,4 @@ __marimo__/
 tmp/
 .vscode/
 logs
+db.db

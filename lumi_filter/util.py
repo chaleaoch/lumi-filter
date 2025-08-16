@@ -5,7 +5,9 @@ to support advanced lookup patterns and inheritance-based resolution.
 """
 
 import inspect
+import types
 from collections.abc import MutableMapping
+from typing import get_args
 
 
 class ClassHierarchyMapping(MutableMapping):
@@ -23,9 +25,15 @@ class ClassHierarchyMapping(MutableMapping):
         self.data = dict(mapping) if mapping else {}
 
     def __getitem__(self, key):
-        for cls in inspect.getmro(key):
-            if cls in self.data:
-                return self.data[cls]
+        if isinstance(key, types.UnionType):
+            keys = get_args(key)
+        else:
+            keys = [key]
+        for key in keys:
+            for cls in inspect.getmro(key):
+                if cls in self.data:
+                    return self.data[cls]
+
         raise KeyError(key)
 
     def __setitem__(self, key, value):

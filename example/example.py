@@ -1,12 +1,12 @@
-from flask import Flask
-
+from app.api.auto_filter_iteratorable import bp as auto_iterable_bp
 from app.api.auto_filter_peewee import bp as auto_peewee_bp
-from app.api.auto_filter_pydantic import bp as auto_pydantic_bp
-from app.api.generic_iterable import bp as generic_iterable_bp
-from app.api.peewee_basic import bp as peewee_basic_bp
-from app.api.peewee_extra_ordering import bp as peewee_extra_ordering_bp
+from app.api.extra_field_ordering_extra_field import bp as extra_fields_bp
+from app.api.model_filter import bp as model_filter_bp
+from app.api.model_filter_peewee import bp as peewee_filter_bp
+from app.api.model_filter_pydantic import bp as pydantic_filter_bp
 from app.db_model import Category, Product
 from extentions import database, db
+from flask import Flask
 
 
 def init_db():
@@ -57,9 +57,13 @@ def create_app() -> Flask:
     app = Flask(__name__)
     db.init_app(app)
     init_db()
-    app.register_blueprint(peewee_basic_bp)
-    app.register_blueprint(peewee_extra_ordering_bp)
-    app.register_blueprint(generic_iterable_bp)
+
+    # Register all API blueprints
     app.register_blueprint(auto_peewee_bp)
-    app.register_blueprint(auto_pydantic_bp)
+    app.register_blueprint(auto_iterable_bp)
+    app.register_blueprint(model_filter_bp)
+    app.register_blueprint(peewee_filter_bp)
+    app.register_blueprint(pydantic_filter_bp)
+    app.register_blueprint(extra_fields_bp)
+
     return app

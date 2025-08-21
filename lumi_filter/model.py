@@ -31,9 +31,7 @@ class MetaModel:
     :type ordering_extra_field: set or None
     """
 
-    def __init__(
-        self, schema=None, fields=None, extra_field=None, ordering_extra_field=None
-    ):
+    def __init__(self, schema=None, fields=None, extra_field=None, ordering_extra_field=None):
         self.schema = schema
         self.fields = fields or []
         self.extra_field = extra_field or {}
@@ -115,13 +113,9 @@ class MetaModel:
                     if self.fields and new_key not in self.fields:
                         continue
 
-                    filter_field_class = pd_filter_mapping.get(
-                        pydantic_field.annotation, FilterField
-                    )
+                    filter_field_class = pd_filter_mapping.get(pydantic_field.annotation, FilterField)
                     field_name = new_key.replace(".", "_")
-                    ret[field_name] = filter_field_class(
-                        request_arg_name=new_key, source=new_key
-                    )
+                    ret[field_name] = filter_field_class(request_arg_name=new_key, source=new_key)
         return ret
 
     def _is_nested_pydantic_model(self, pydantic_field):
@@ -131,9 +125,7 @@ class MetaModel:
         :return: True if field represents a nested Pydantic model
         :rtype: bool
         """
-        return isinstance(pydantic_field.annotation, type) and issubclass(
-            pydantic_field.annotation, pydantic.BaseModel
-        )
+        return isinstance(pydantic_field.annotation, type) and issubclass(pydantic_field.annotation, pydantic.BaseModel)
 
 
 class ModelMeta(type):
@@ -296,7 +288,7 @@ class Model(metaclass=ModelMeta):
         if not ordering:
             return data
 
-        backend = cls._get_backend_instance(data)
+        backend = cls._get_backend_class(data)
         ordering_list = ordering.split(",")
 
         for field_name in ordering_list:
@@ -313,16 +305,6 @@ class Model(metaclass=ModelMeta):
         """Get appropriate backend class for data type."""
         if isinstance(data, peewee.ModelSelect):
             return PeeweeBackend
-        elif isinstance(data, Iterable):
-            return IterableBackend
-        else:
-            raise TypeError(f"Unsupported data type: {type(data)}")
-
-    @classmethod
-    def _get_backend_instance(cls, data):
-        """Get appropriate backend instance for data type."""
-        if isinstance(data, peewee.ModelSelect):
-            return PeeweeBackend(data, cls.__ordering_extra_field__)
         elif isinstance(data, Iterable):
             return IterableBackend
         else:

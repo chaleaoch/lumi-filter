@@ -31,41 +31,8 @@ class PeeweeBackend:
         "iin": operator.pow,
     }
 
-    def __init__(self, query, ordering_extra_fields=None):
-        self.field_names = self._extract_field_names(query)
-        if ordering_extra_fields:
-            self.field_names.update(ordering_extra_fields)
-
-    def _extract_field_names(self, query):
-        """Extract field names from query selected columns.
-
-        :param query: The Peewee query object
-        :return: Set of field names extracted from the query
-        :rtype: set
-        """
-        field_names = set()
-        for node in query.selected_columns:
-            field_name = self._get_node_name(node)
-            if field_name:
-                field_names.add(field_name)
-        return field_names
-
-    def _get_node_name(self, node):
-        """Get field name from a query node.
-
-        :param node: The query node to extract name from
-        :return: Field name or None if unsupported
-        :rtype: str or None
-        """
-        if isinstance(node, peewee.Alias):
-            return node.name
-        elif isinstance(node, peewee.Field):
-            return node.column_name
-        else:
-            logger.warning(
-                "Unsupported field type in query: %s. Skipping.", type(node).__name__
-            )
-            return None
+    def __init__(self):
+        pass
 
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
@@ -92,7 +59,8 @@ class PeeweeBackend:
         operator_func = cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr]
         return query.where(operator_func(peewee_field, value))
 
-    def order(self, query, field_name, is_negative=False):
+    @classmethod
+    def order(cls, query, field_name, is_negative=False):
         """Apply ordering to the query.
 
         :param query: The Peewee query to order
@@ -101,8 +69,6 @@ class PeeweeBackend:
         :type is_negative: bool
         :return: Ordered query
         """
-        if field_name not in self.field_names:
-            return query
 
         direction = "DESC" if is_negative else "ASC"
         return query.order_by(peewee.SQL(f"{field_name} {direction}"))
@@ -183,9 +149,7 @@ class IterableBackend:
         :return: Sorted data
         """
         try:
-            return sorted(
-                data, key=lambda x: cls._get_nested_value(x, key), reverse=is_reverse
-            )
+            return sorted(data, key=lambda x: cls._get_nested_value(x, key), reverse=is_reverse)
         except (KeyError, TypeError):
             logger.warning("Failed to sort by key: %s", key)
             return data

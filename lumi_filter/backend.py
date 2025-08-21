@@ -16,8 +16,6 @@ class PeeweeBackend:
     to Peewee ORM queries in a consistent manner.
 
     :param query: The Peewee query to apply filters and ordering to
-    :param ordering_extra_fields: Additional fields allowed for ordering
-    :type ordering_extra_fields: set or None
     """
 
     LOOKUP_EXPR_OPERATOR_MAP = {
@@ -133,10 +131,18 @@ class IterableBackend:
         :param lookup_expr: The lookup expression for filtering
         :return: Filtered iterable
         """
-        return filter(
+
+        ret = filter(
             partial(cls._match_item, key=key, value=value, lookup_expr=lookup_expr),
             data,
         )
+        if isinstance(data, list):
+            return list(ret)
+        if isinstance(data, tuple):
+            return tuple(ret)
+        if isinstance(data, set):
+            return set(ret)
+        return ret
 
     @classmethod
     def order(cls, data, key, is_reverse=False):

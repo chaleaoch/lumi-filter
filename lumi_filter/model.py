@@ -31,11 +31,10 @@ class MetaModel:
     :type ordering_extra_field: set or None
     """
 
-    def __init__(self, schema=None, fields=None, extra_field=None, ordering_extra_field=None):
+    def __init__(self, schema=None, fields=None, extra_field=None):
         self.schema = schema
         self.fields = fields or []
         self.extra_field = extra_field or {}
-        self.ordering_extra_field = ordering_extra_field or set()
 
     def get_filter_fields(self):
         """Generate filter fields from schema and extra fields.
@@ -145,13 +144,14 @@ class ModelMeta(type):
         attrs = meta_model.get_filter_fields() | attrs
 
         filter_fields = []
+        filter_field_map = {}
         source_types = set()
 
         for field_name, field in attrs.items():
             if isinstance(field, FilterField):
                 cls._configure_field(field, field_name)
                 cls._validate_field_name(field, field_name)
-
+                filter_field_map[field_name] = field
                 filter_fields.append(field)  # it should be useful in the future
                 source_types.add(cls._get_source_type(field))
                 field_lookup_mappings = cls._get_lookup_expressions(field)
@@ -160,7 +160,7 @@ class ModelMeta(type):
         cls._validate_source_type_consistency(source_types, name)
 
         attrs["__supported_query_key_field_dict__"] = supported_query_key_field_dict
-        attrs["__ordering_extra_field__"] = meta_model.ordering_extra_field
+        attrs["__ordering_field_map__"] = filter_field_map
 
         return super().__new__(cls, name, bases, attrs)
 
@@ -287,16 +287,15 @@ class Model(metaclass=ModelMeta):
         ordering = request_args.get("ordering", "")
         if not ordering:
             return data
-
         backend = cls._get_backend_class(data)
-        ordering_list = ordering.split(",")
-
-        for field_name in ordering_list:
+        for field_name in ordering.split(","):
             is_negative = field_name.startswith("-")
             if is_negative:
                 field_name = field_name[1:]
-
-            data = backend.order(data, field_name, is_negative)
+            field = cls.__ordering_field_map__.get(field_name)
+            if not field:
+                continue
+            data = backend.order(data, field.source, is_negative)
 
         return data
 

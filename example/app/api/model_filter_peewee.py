@@ -18,9 +18,6 @@ class AdvancedProductFilter(Model):
     category_id = IntField(source=Product.category)
     category_name = StrField(source=Category.name)
 
-    class Meta:
-        ordering_fields = ["id", "name", "price", "created_at", "category_name"]
-
 
 @bp.get("")
 def list_products_peewee():

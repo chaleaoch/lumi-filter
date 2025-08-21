@@ -8,7 +8,6 @@ Demonstrates how to add extra fields to a filter model and use custom ordering.
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
-
 from lumi_filter.field import BooleanField, DateTimeField, DecimalField, IntField, StrField
 from lumi_filter.model import Model
 
@@ -32,12 +31,7 @@ class ProductFilterWithExtras(Model):
     category_name = StrField(source=Category.name)
 
     # Extra computed fields
-    price_range = StrField(request_arg_name="price_range")  # Custom logic field
-
-    class Meta:
-        # Custom ordering options
-        ordering_fields = ["id", "name", "price", "created_at", "category_name", "price_range"]
-        default_ordering = ["-created_at", "name"]
+    # price_range = StrField(request_arg_name="price_range")  # Custom logic field
 
 
 @bp.get("")

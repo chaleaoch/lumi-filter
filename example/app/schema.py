@@ -28,7 +28,5 @@ class ProductListQuery(BaseModel):
     """Query params for list endpoint (subset to demonstrate)"""
 
     name: str | None = None
-    price__gte: float | None = None
-    price__lte: float | None = None
     is_active: bool | None = None
     ordering: str | None = None

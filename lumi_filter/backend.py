@@ -58,18 +58,18 @@ class PeeweeBackend:
         return query.where(operator_func(peewee_field, value))
 
     @classmethod
-    def order(cls, query, field_name, is_negative=False):
+    def order(cls, query, field, is_negative=False):
         """Apply ordering to the query.
 
         :param query: The Peewee query to order
-        :param field_name: Name of the field to order by
+        :param field: The field to order by
         :param is_negative: Whether to order in descending order
         :type is_negative: bool
         :return: Ordered query
         """
 
         direction = "DESC" if is_negative else "ASC"
-        return query.order_by(peewee.SQL(f"{field_name} {direction}"))
+        return query.order_by(peewee.SQL(f"{field.name} {direction}"))
 
 
 class IterableBackend:

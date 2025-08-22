@@ -2,10 +2,8 @@ from logging.config import dictConfig
 
 from flask import Flask
 
-from app.api.anvanced_model_filter import bp as advanced_model_filter_bp
+from app.api.advanced_model_filter import bp as advanced_model_filter_bp
 from app.api.auto_filter import bp as auto_iterable_bp
-from app.api.auto_filter_peewee import bp as auto_peewee_bp
-from app.api.extra_field_ordering_extra_field import bp as extra_fields_bp
 from app.api.model_filter import bp as model_filter_bp
 from app.db_model import Category, Product
 from extentions import database, db
@@ -89,10 +87,8 @@ def create_app() -> Flask:
         }
     )
     # Register all API blueprints
-    app.register_blueprint(auto_peewee_bp)
     app.register_blueprint(auto_iterable_bp)
     app.register_blueprint(model_filter_bp)
-    app.register_blueprint(extra_fields_bp)
     app.register_blueprint(advanced_model_filter_bp)
 
     return app

@@ -5,8 +5,6 @@ GET /model/products
 Demonstrates basic usage of custom filter models with explicit field definitions.
 """
 
-from __future__ import annotations
-
 from flask import Blueprint, jsonify, request
 from lumi_filter.field import BooleanField, DateTimeField, DecimalField, IntField, StrField
 from lumi_filter.model import Model
@@ -117,11 +115,11 @@ def list_products_basic():
 
 
 class FilterIterableProduct(Model):
-    name = StrField(source="products.name")
-    price = DecimalField(source="products.price")
-    is_active = BooleanField(source="products.is_active")
-    created_at = DateTimeField(source="products.created_at", request_arg_name="created_at")
-    id = IntField(source="products.id")
+    name = StrField(source="product.name")
+    price = DecimalField(source="product.price")
+    is_active = BooleanField(source="product.is_active")
+    created_at = DateTimeField(source="product.created_at", request_arg_name="created_at")
+    id = IntField(source="product.id")
     category_id = IntField(source="category_id", request_arg_name="category_id")
     category_name = StrField(source="category_name", request_arg_name="category_name")
 
@@ -204,7 +202,7 @@ def list_products_iterable():
     # Simulate iterable data structure (could be from JSON, API, etc.)
     products_data = [
         {
-            "products": {
+            "product": {
                 "id": p.id,
                 "name": p.name,
                 "price": p.price,

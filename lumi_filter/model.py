@@ -31,10 +31,9 @@ class MetaModel:
     :type ordering_extra_field: set or None
     """
 
-    def __init__(self, schema=None, fields=None, extra_field=None):
+    def __init__(self, schema=None, fields=None):
         self.schema = schema
         self.fields = fields or []
-        self.extra_field = extra_field or {}
 
     def get_filter_fields(self):
         """Generate filter fields from schema and extra fields.
@@ -50,8 +49,6 @@ class MetaModel:
             elif self._is_pydantic_model(self.schema):
                 ret.update(self._process_pydantic_fields())
 
-        # Extra fields override schema fields
-        ret.update(self.extra_field)
         return ret
 
     def _is_peewee_model(self, schema):

@@ -1,259 +1,372 @@
-"""Tests for advanced_model_filter API endpoints.
-
-This test suite validates the advanced model filter endpoints using data from init_db().
-The init_db() function creates 25 products across 8 categories:
-- Berry: Grape(3.10), Strawberry(4.50), Blueberry(5.10), Avocado(3.30), Pomegranate(5.60) - all active
-- Citrus: Orange(2.50), Lemon(0.60), Lime(0.55), Grapefruit(1.60) - all active
-- Fruit: Apple(1.20), Pear(1.85), Fig(3.95), Date(6.10) - all active
-- Melon: Watermelon(6.30) - inactive
-- Stone: Peach(2.20), Cherry(6.80), Plum(2.05), Apricot(2.15) - all active
-- Tropical: Banana(0.80), Mango(2.90), Pineapple(3.70), Kiwi(1.10), Papaya(2.40), Dragonfruit(7.90), Coconut(4.20) - Coconut is inactive, others active
-
-Active products: 23, Inactive products: 2 (Watermelon, Coconut)
-"""
-
-import json
+"""Tests for advanced_model_filter API endpoints."""
 
 
-class TestAdvancedModelFilterAPI:
-    """Test cases for advanced model filter API endpoints."""
+class TestAdvancedModelFilterBasic:
+    """Test cases for /advanced-model/ endpoint using advanced model filter capabilities."""
 
-    def test_advanced_filter_basic_list(self, client):
-        """Test basic listing without filters."""
+    def test_def test_list_products_advanced_without_filters(self, client):(self, client):
+        """Test listing all products using advanced model filter."""
         response = client.get("/advanced-model/")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "count" in data
         assert "results" in data
-        assert data["count"] == 25  # Total 25 products from init_db
+        assert data["count"] == 6
+        assert len(data["results"]) == 6
 
-    def test_advanced_filter_name_in(self, client):
-        """Test name in filter with advanced model."""
-        response = client.get("/advanced-model/?name__in=Apple,Orange,Banana")
+        # Verify structure includes both explicit and schema-based fields
+        first_product = data["results"][0]
+        expected_fields = {"id", "name", "price", "is_active", "created_at", "category_id", "category_name"}
+        assert set(first_product.keys()) == expected_fields
+
+    def test_def test_advanced_filter_by_schema_field_name(self, client):(self, client):
+        """Test filtering by schema-based field (name)."""
+        response = client.get("/advanced-model/?name__in=iPhone 15,Jeans")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 3
+        data = response.get_json()
+        assert data["count"] == 2
 
-        # Check that returned products have the correct names
-        product_names = [item["name"] for item in data["results"]]
-        expected_names = {"Apple", "Orange", "Banana"}
-        assert set(product_names) == expected_names
+        product_names = [p["name"] for p in data["results"]]
+        assert "iPhone 15" in product_names
+        assert "Jeans" in product_names
 
-    def test_advanced_filter_price_range(self, client):
-        """Test price range filtering."""
-        response = client.get("/advanced-model/?price__gte=1.0&price__lte=2.5")
+    def test_def test_advanced_filter_by_schema_field_price(self, client):(self, client):
+        """Test filtering by schema-based field (price)."""
+        response = client.get("/advanced-model/?price__gte=1000")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Products with price between 1.0 and 2.5:
-        # Apple(1.20), Orange(2.50), Pear(1.85), Peach(2.20), Kiwi(1.10), Papaya(2.40), Plum(2.05), Apricot(2.15), Grapefruit(1.60)
-        assert data["count"] == 9
+        data = response.get_json()
+        assert data["count"] == 2  # iPhone 15 and MacBook Pro
 
-        for item in data["results"]:
-            price = float(item["price"])
-            assert 1.0 <= price <= 2.5
+        for product in data["results"]:
+            assert float(product["price"]) >= 1000
 
-    def test_advanced_filter_is_active(self, client):
-        """Test filtering by active status."""
-        response = client.get("/advanced-model/?is_active=true")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert data["count"] == 23  # All except Watermelon and Coconut are active
-
-        for item in data["results"]:
-            assert item["is_active"] is True
-
-    def test_advanced_filter_is_inactive(self, client):
-        """Test filtering by inactive status."""
+    def test_def test_advanced_filter_by_schema_field_is_active(self, client):(self, client):
+        """Test filtering by schema-based field (is_active)."""
         response = client.get("/advanced-model/?is_active=false")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 2  # Only Watermelon and Coconut are inactive
+        data = response.get_json()
+        assert data["count"] == 1
+        assert data["results"][0]["name"] == "Apple Watch"
+        assert data["results"][0]["is_active"] is False
 
-        inactive_names = [item["name"] for item in data["results"]]
-        assert set(inactive_names) == {"Watermelon", "Coconut"}
-
-    def test_advanced_filter_category_id(self, client):
-        """Test filtering by category ID."""
-        # First get a category ID
-        response = client.get("/advanced-model/")
-        all_data = json.loads(response.data)
-        berry_category_id = None
-        for item in all_data["results"]:
-            if item["category_name"] == "Berry":
-                berry_category_id = item["category_id"]
-                break
-
-        assert berry_category_id is not None
-
-        # Filter by category ID
-        response = client.get(f"/advanced-model/?category_id={berry_category_id}")
+    def test_def test_advanced_filter_by_explicit_field_category_id(self, client):(self, client):
+        """Test filtering by explicit field definition (category_id)."""
+        electronics_id = sample_data["categories"][0].id
+        response = client.get(f"/advanced-model/?category_id={electronics_id}")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Berry category has: Grape, Strawberry, Blueberry, Avocado, Pomegranate = 5 products
-        assert data["count"] == 5
+        data = response.get_json()
+        assert data["count"] == 3  # iPhone, MacBook, Apple Watch
 
-        for item in data["results"]:
-            assert item["category_id"] == berry_category_id
-            assert item["category_name"] == "Berry"
+        for product in data["results"]:
+            assert product["category_id"] == electronics_id
+            assert product["category_name"] == "Electronics"
 
-    def test_advanced_filter_category_name(self, client):
-        """Test filtering by category name."""
-        response = client.get("/advanced-model/?category_name=Citrus")
+    def test_def test_advanced_filter_by_explicit_field_category_name(self, client):(self, client):
+        """Test filtering by explicit field definition (category_name)."""
+        response = client.get("/advanced-model/?category_name=Clothing")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 4  # Orange, Lemon, Lime, Grapefruit
+        data = response.get_json()
+        assert data["count"] == 2  # T-Shirt and Jeans
 
-        citrus_names = [item["name"] for item in data["results"]]
-        expected_citrus = {"Orange", "Lemon", "Lime", "Grapefruit"}
-        assert set(citrus_names) == expected_citrus
+        for product in data["results"]:
+            assert product["category_name"] == "Clothing"
 
-        for item in data["results"]:
-            assert item["category_name"] == "Citrus"
-
-    def test_advanced_filter_combined(self, client):
-        """Test combining multiple filters."""
-        response = client.get("/advanced-model/?name__in=Apple,Orange,Banana&is_active=true&price__gte=1.0")
+    def test_def test_advanced_mixed_field_filtering(self, client):(self, client):
+        """Test filtering using both schema-based and explicit fields."""
+        response = client.get(
+            "/advanced-model/?name__in=iPhone 15,MacBook Pro&category_name=Electronics&is_active=true"
+        )
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Should return Apple (1.20) and Orange (2.50), but not Banana (0.80 < 1.0)
+        data = response.get_json()
         assert data["count"] == 2
 
-        names = [item["name"] for item in data["results"]]
-        assert "Apple" in names
-        assert "Orange" in names
-        assert "Banana" not in names
+        for product in data["results"]:
+            assert product["name"] in ["iPhone 15", "MacBook Pro"]
+            assert product["category_name"] == "Electronics"
+            assert product["is_active"] is True
 
-    def test_advanced_filter_ordering_asc(self, client):
-        """Test ascending ordering."""
+    def test_def test_advanced_price_range_filtering(self, client):(self, client):
+        """Test advanced price range filtering."""
+        response = client.get("/advanced-model/?price__gte=50&price__lte=500")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 3  # Apple Watch, Jeans, Python Book
+
+        for product in data["results"]:
+            price = float(product["price"])
+            assert 50 <= price <= 500
+
+    def test_def test_advanced_ordering_by_schema_field(self, client):(self, client):
+        """Test ordering by schema-based fields."""
         response = client.get("/advanced-model/?ordering=price")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 25
-
-        # Check if ordered by price ascending
-        prices = [float(item["price"]) for item in data["results"]]
+        data = response.get_json()
+        prices = [float(p["price"]) for p in data["results"]]
         assert prices == sorted(prices)
-        # First should be cheapest (Lime: 0.55), last should be most expensive (Dragonfruit: 7.90)
-        assert data["results"][0]["name"] == "Lime"
-        assert data["results"][-1]["name"] == "Dragonfruit"
 
-    def test_advanced_filter_ordering_desc(self, client):
-        """Test descending ordering."""
+    def test_def test_advanced_ordering_by_explicit_field(self, client):(self, client):
+        """Test ordering by explicit field definitions."""
+        response = client.get("/advanced-model/?ordering=category_name")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        category_names = [p["category_name"] for p in data["results"]]
+        assert category_names == sorted(category_names)
+
+    def test_def test_advanced_descending_ordering(self, client):(self, client):
+        """Test descending ordering with advanced model filter."""
         response = client.get("/advanced-model/?ordering=-price")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 25
-
-        # Check if ordered by price descending
-        prices = [float(item["price"]) for item in data["results"]]
+        data = response.get_json()
+        prices = [float(p["price"]) for p in data["results"]]
         assert prices == sorted(prices, reverse=True)
-        # First should be most expensive (Dragonfruit: 7.90), last should be cheapest (Lime: 0.55)
-        assert data["results"][0]["name"] == "Dragonfruit"
-        assert data["results"][-1]["name"] == "Lime"
+
+    def test_def test_advanced_multiple_ordering_criteria(self, client):(self, client):
+        """Test multiple ordering criteria with advanced model filter."""
+        response = client.get("/advanced-model/?ordering=category_name,-price")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 6
+
+        # Verify ordering: first by category name (ascending), then by price (descending)
+        prev_category = ""
+        prev_price_in_category = float("inf")
+
+        for product in data["results"]:
+            current_category = product["category_name"]
+            current_price = float(product["price"])
+
+            if current_category == prev_category:
+                assert current_price <= prev_price_in_category
+            else:
+                assert current_category >= prev_category
+                prev_price_in_category = float("inf")
+
+            prev_category = current_category
+            prev_price_in_category = current_price
+
+    def test_def test_advanced_complex_filtering_with_ordering(self, client):(self, client):
+        """Test complex filtering combined with ordering."""
+        response = client.get("/advanced-model/?is_active=true&price__gte=50&ordering=-price")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 4  # All active products with price >= 50
+
+        # Verify all conditions
+        for product in data["results"]:
+            assert product["is_active"] is True
+            assert float(product["price"]) >= 50
+
+        # Verify ordering
+        prices = [float(p["price"]) for p in data["results"]]
+        assert prices == sorted(prices, reverse=True)
+
+    def test_def test_advanced_filter_edge_cases(self, client):(self, client):
+        """Test edge cases with advanced model filter."""
+        # Test non-existent category
+        response = client.get("/advanced-model/?category_name=NonExistent")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["count"] == 0
+        assert data["results"] == []
+
+        # Test invalid price range
+        response = client.get("/advanced-model/?price__gte=10000")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["count"] == 0
 
 
-class TestAdvancedModelFilterIterableAPI:
-    """Test cases for advanced model filter iterable API endpoints."""
+class TestAdvancedModelFilterIterable:
+    """Test cases for /advanced-model/iterable/ endpoint using advanced model with iterable data."""
 
-    def test_advanced_iterable_basic_list(self, client):
-        """Test basic listing for iterable endpoint."""
+    def test_def test_list_products_advanced_iterable_without_filters(self, client):(self, client):
+        """Test listing all products from iterable data using advanced model filter."""
         response = client.get("/advanced-model/iterable/")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "count" in data
         assert "results" in data
-        assert data["count"] == 25
+        assert data["count"] == 6
+        assert len(data["results"]) == 6
 
-    def test_advanced_iterable_filter_by_id(self, client):
-        """Test filtering by ID."""
-        response = client.get("/advanced-model/iterable/?id=1")
+        # Verify nested structure with both explicit and schema-based fields
+        first_product = data["results"][0]
+        assert "product" in first_product
+        assert "category_id" in first_product
+        assert "category_name" in first_product
+
+    def test_def test_advanced_iterable_filter_by_explicit_field_id(self, client):(self, client):
+        """Test filtering iterable data by explicit field (id)."""
+        product_id = sample_data["products"][0].id
+        response = client.get(f"/advanced-model/iterable/?id={product_id}")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["count"] == 1
-        assert data["results"][0]["id"] == 1
+        assert data["results"][0]["product"]["id"] == product_id
 
-    def test_advanced_iterable_filter_by_product_name(self, client):
-        """Test filtering by product name."""
-        response = client.get("/advanced-model/iterable/?product_name__in=Apple,Banana")
+    def test_def test_advanced_iterable_filter_by_explicit_field_product_name(self, client):(self, client):
+        """Test filtering iterable data by explicit field (product_name)."""
+        response = client.get("/advanced-model/iterable/?product_name__in=T-Shirt,Python Programming Book")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["count"] == 2
 
-        names = [item["product_name"] for item in data["results"]]
-        assert set(names) == {"Apple", "Banana"}
+        product_names = [p["product"]["name"] for p in data["results"]]
+        assert "T-Shirt" in product_names
+        assert "Python Programming Book" in product_names
 
-    def test_advanced_iterable_filter_by_price(self, client):
-        """Test filtering by price in nested structure."""
-        response = client.get("/advanced-model/iterable/?price__lte=1.5")
+    def test_def test_advanced_iterable_filter_by_explicit_field_price(self, client):(self, client):
+        """Test filtering iterable data by explicit field (price)."""
+        response = client.get("/advanced-model/iterable/?price__gte=100&price__lte=1000")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Should return products with price <= 1.5
-        # Apple(1.20), Banana(0.80), Lemon(0.60), Lime(0.55), Kiwi(1.10) = 5 products
-        assert data["count"] == 5
+        data = response.get_json()
+        assert data["count"] == 1  # Only Apple Watch
+        assert data["results"][0]["product"]["name"] == "Apple Watch"
 
-        for item in data["results"]:
-            assert item["price"] <= 1.5
-
-    def test_advanced_iterable_filter_by_active_status(self, client):
-        """Test filtering by active status."""
+    def test_def test_advanced_iterable_filter_by_explicit_field_is_active(self, client):(self, client):
+        """Test filtering iterable data by explicit field (is_active)."""
         response = client.get("/advanced-model/iterable/?is_active=false")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 2  # Watermelon and Coconut
+        data = response.get_json()
+        assert data["count"] == 1
+        assert data["results"][0]["product"]["name"] == "Apple Watch"
+        assert data["results"][0]["product"]["is_active"] is False
 
-        names = [item["product_name"] for item in data["results"]]
-        assert set(names) == {"Watermelon", "Coconut"}
-
-    def test_advanced_iterable_filter_by_category(self, client):
-        """Test filtering by category name."""
-        response = client.get("/advanced-model/iterable/?category_name=Tropical")
+    def test_def test_advanced_iterable_filter_by_explicit_field_created_at(self, client):(self, client):
+        """Test filtering iterable data by explicit field (created_at)."""
+        response = client.get("/advanced-model/iterable/?created_at__gte=2024-03-01T00:00:00")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Tropical: Banana, Mango, Pineapple, Kiwi, Papaya, Dragonfruit, Coconut = 7 products
-        assert data["count"] == 7
+        data = response.get_json()
+        assert data["count"] == 1  # Only Apple Watch
+        assert data["results"][0]["product"]["name"] == "Apple Watch"
 
-        tropical_names = [item["product_name"] for item in data["results"]]
-        expected_tropical = {"Banana", "Mango", "Pineapple", "Kiwi", "Papaya", "Dragonfruit", "Coconut"}
-        assert set(tropical_names) == expected_tropical
+    def test_def test_advanced_iterable_filter_by_schema_field(self, client):(self, client):
+        """Test filtering iterable data by schema-based fields."""
+        books_id = sample_data["categories"][2].id
+        response = client.get(f"/advanced-model/iterable/?category_id={books_id}")
+        assert response.status_code == 200
 
-    def test_advanced_iterable_ordering(self, client):
-        """Test ordering functionality."""
+        data = response.get_json()
+        assert data["count"] == 1
+        assert data["results"][0]["product"]["name"] == "Python Programming Book"
+        assert data["results"][0]["category_id"] == books_id
+
+    def test_def test_advanced_iterable_mixed_field_filtering(self, client):(self, client):
+        """Test filtering iterable data using both explicit and schema-based fields."""
+        response = client.get(
+            "/advanced-model/iterable/?product_name__in=iPhone 15,MacBook Pro&category_name=Electronics&is_active=true"
+        )
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 2
+
+        for result in data["results"]:
+            assert result["product"]["name"] in ["iPhone 15", "MacBook Pro"]
+            assert result["category_name"] == "Electronics"
+            assert result["product"]["is_active"] is True
+
+    def test_def test_advanced_iterable_ordering_by_explicit_field(self, client):(self, client):
+        """Test ordering iterable data by explicit fields."""
         response = client.get("/advanced-model/iterable/?ordering=-price")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        assert data["count"] == 25
-
-        prices = [float(item["price"]) for item in data["results"]]
+        data = response.get_json()
+        prices = [float(p["product"]["price"]) for p in data["results"]]
         assert prices == sorted(prices, reverse=True)
 
-    def test_advanced_iterable_combined_filters(self, client):
-        """Test combining multiple filters."""
-        response = client.get("/advanced-model/iterable/?category_name=Berry&is_active=true")
+    def test_def test_advanced_iterable_ordering_by_schema_field(self, client):(self, client):
+        """Test ordering iterable data by schema-based fields."""
+        response = client.get("/advanced-model/iterable/?ordering=category_name")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
-        # Berry category active products: Grape, Strawberry, Blueberry, Avocado, Pomegranate = 5 products
-        assert data["count"] == 5
+        data = response.get_json()
+        category_names = [p["category_name"] for p in data["results"]]
+        assert category_names == sorted(category_names)
 
-        for item in data["results"]:
-            assert item["is_active"] is True
-            # Get category name from the nested structure
-            category_name = item.get("category", {}).get("name")
-            assert category_name == "Berry"
+    def test_def test_advanced_iterable_complex_filtering_and_ordering(self, client):(self, client):
+        """Test complex filtering and ordering on iterable data."""
+        response = client.get("/advanced-model/iterable/?is_active=true&price__gte=50&ordering=category_name,-price")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 4  # Active products with price >= 50
+
+        # Verify filtering conditions
+        for result in data["results"]:
+            assert result["product"]["is_active"] is True
+            assert float(result["product"]["price"]) >= 50
+
+        # Verify ordering (category name ascending, then price descending within category)
+        prev_category = ""
+        prev_price_in_category = float("inf")
+
+        for result in data["results"]:
+            current_category = result["category_name"]
+            current_price = float(result["product"]["price"])
+
+            if current_category == prev_category:
+                assert current_price <= prev_price_in_category
+            else:
+                assert current_category >= prev_category
+                prev_price_in_category = float("inf")
+
+            prev_category = current_category
+            prev_price_in_category = current_price
+
+    def test_def test_advanced_iterable_date_range_filtering(self, client):(self, client):
+        """Test date range filtering on iterable data."""
+        response = client.get(
+            "/advanced-model/iterable/?created_at__gte=2024-02-01T00:00:00&created_at__lte=2024-02-28T23:59:59"
+        )
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 2  # MacBook Pro and Jeans
+
+        for result in data["results"]:
+            created_at = result["product"]["created_at"]
+            assert "2024-02" in created_at
+
+    def test_def test_advanced_iterable_price_and_category_filtering(self, client):(self, client):
+        """Test combined price and category filtering on iterable data."""
+        response = client.get("/advanced-model/iterable/?price__lte=100&category_name__in=Clothing,Books")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 3  # T-Shirt, Jeans, Python Book
+
+        for result in data["results"]:
+            assert float(result["product"]["price"]) <= 100
+            assert result["category_name"] in ["Clothing", "Books"]
+
+    def test_def test_advanced_iterable_multiple_ordering_criteria(self, client):(self, client):
+        """Test multiple ordering criteria on iterable data."""
+        response = client.get("/advanced-model/iterable/?ordering=product_name,id")
+        assert response.status_code == 200
+
+        data = response.get_json()
+        assert data["count"] == 6
+
+        # Verify ordering by product name first, then by id
+        product_names = [p["product"]["name"] for p in data["results"]]
+        assert product_names == sorted(product_names)

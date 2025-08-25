@@ -2,7 +2,7 @@ from logging.config import dictConfig
 
 from flask import Flask
 
-from app import cli
+import cli
 from app.api.advanced_model_filter import bp as advanced_model_filter_bp
 from app.api.auto_filter import bp as auto_iterable_bp
 from app.api.model_filter import bp as model_filter_bp

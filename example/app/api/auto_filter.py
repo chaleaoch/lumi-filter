@@ -1,53 +1,101 @@
-"""Automatic field introspection demo.
+"""Automatic Iterable field introspection demo.
 
-This module demonstrates automatic field introspection using AutoQueryModel for both
-database queries and iterable data structures like lists of dictionaries.
+This module demonstrates automatic filtering capabilities for both Peewee ORM
+queries and iterable data structures using AutoQueryModel. It showcases how
+lumi_filter can automatically introspect data structures and generate appropriate
+filter fields without manual configuration.
 
-Example:
-    GET /auto/ - Auto-filter database query results
-    GET /auto/iterable/ - Auto-filter iterable data structures
+Available Endpoints:
+    GET /auto/ - Auto filtering with Peewee ORM queries
+    GET /auto/iterable/ - Auto filtering with iterable data structures
+
+Examples:
+    Test auto filtering with ORM:
+    ```bash
+    # Basic filtering
+    curl -X GET "http://localhost:5000/auto/?name=Apple"
+
+    # Advanced filtering with lookups
+    curl -X GET "http://localhost:5000/auto/?name__icontains=apple&price__gte=1.0"
+
+    # Filter by category
+    curl -X GET "http://localhost:5000/auto/?category_name=Fruit&is_active=true"
+
+    # Price range filtering
+    curl -X GET "http://localhost:5000/auto/?price__gte=2.0&price__lte=5.0"
+    ```
+
+    Test iterable data filtering:
+    ```bash
+    # Filter nested product data
+    curl -X GET "http://localhost:5000/auto/iterable/?product_name=Banana"
+
+    # Filter by product ID
+    curl -X GET "http://localhost:5000/auto/iterable/?product_id=1"
+
+    # Filter by category information
+    curl -X GET "http://localhost:5000/auto/iterable/?category_name=Berry"
+    ```
 """
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
-from lumi_filter.shortcut import AutoQueryModel
-
 from app.db_model import Category, Product
+from flask import Blueprint, jsonify, request
+
+from lumi_filter.shortcut import AutoQueryModel
 
 bp = Blueprint("auto_iterable", __name__, url_prefix="/auto/")
 
 
 @bp.get("")
 def list_products_auto():
-    """List products using automatic field introspection.
+    """List products using automatic ORM query filtering.
 
-    This endpoint demonstrates automatic field detection and filtering using AutoQueryModel
-    with database query results. All selected fields are automatically made filterable.
-
-    Args:
-        id (int, optional): Filter by product ID.
-        name (str, optional): Filter by product name (supports __in, __nin).
-        price (decimal, optional): Filter by price (supports __gte, __lte).
-        is_active (bool, optional): Filter by active status.
-        created_at (datetime, optional): Filter by creation date (supports __gte, __lte).
-        category_id (int, optional): Filter by category ID.
-        category_name (str, optional): Filter by category name.
-        ordering (str, optional): Order results by field(s). Use '-' prefix for descending.
+    Demonstrates AutoQueryModel with Peewee ORM queries. The model automatically
+    introspects the selected columns and generates appropriate filter fields
+    based on the Peewee field types.
 
     Returns:
         list: List of product dictionaries with fields:
-            id, name, price, is_active, created_at, category_id, category_name
+            - id (int): Product ID
+            - name (str): Product name
+            - price (float): Product price
+            - is_active (bool): Product active status
+            - created_at (str): Product creation timestamp
+            - category_id (int): Associated category ID
+            - category_name (str): Associated category name
 
     Examples:
-        Basic request:
-            GET /auto/
+        Basic filtering:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/"
+        ```
 
-        Auto-detected field filtering:
-            GET /auto/?name__in=Apple,Orange&price__gte=100&is_active=true
+        Filter by name (case-insensitive contains):
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?name__icontains=apple"
+        ```
 
-        Ordering by auto-detected fields:
-            GET /auto/?ordering=-price,name
+        Filter by price range:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?price__gte=1.0&price__lte=3.0"
+        ```
+
+        Filter by active status:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?is_active=true"
+        ```
+
+        Filter by category:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?category_name=Fruit"
+        ```
+
+        Complex filtering:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?name__icontains=berry&is_active=true&price__lt=6.0"
+        ```
     """
     query = Product.select(
         Product.id,
@@ -64,38 +112,50 @@ def list_products_auto():
 
 @bp.get("/iterable/")
 def list_products_iterable_auto():
-    """List products using automatic field introspection on iterable data.
+    """List products using automatic iterable data filtering.
 
-    This endpoint demonstrates automatic field detection and filtering using AutoQueryModel
-    with iterable data structures. Fields are automatically detected from the data structure.
-
-    Args:
-        product.id (int, optional): Filter by product ID within nested structure.
-        product.name (str, optional): Filter by product name (supports __in, __nin).
-        product.price (decimal, optional): Filter by price (supports __gte, __lte).
-        product.is_active (bool, optional): Filter by active status.
-        product.created_at (str, optional): Filter by creation date (ISO format).
-        category_id (int, optional): Filter by category ID.
-        category_name (str, optional): Filter by category name.
-        ordering (str, optional): Order results by field(s). Use '-' prefix for descending.
+    Demonstrates AutoQueryModel with nested dictionary data structures. The model
+    automatically introspects the dictionary structure and generates filter fields
+    for nested attributes using dot notation (e.g., "product.name" becomes "product_name").
 
     Returns:
-        dict: JSON response containing:
+        dict: Response containing:
             - count (int): Total number of filtered results
-            - results (list): List of product dictionaries with nested structure
+            - results (list): List of filtered product dictionaries with nested structure:
+                - product (dict): Product information
+                    - id (int): Product ID
+                    - name (str): Product name
+                    - price (float): Product price
+                    - is_active (bool): Product active status
+                    - created_at (str): ISO formatted creation timestamp
+                - category_id (int): Associated category ID
+                - category_name (str): Associated category name
 
     Examples:
-        Basic request:
-            GET /auto/iterable/
+        Get all products:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/"
+        ```
 
-        Auto-detected nested field filtering:
-            GET /auto/iterable/?product.name__in=Apple,Orange&product.price__lte=800
+        Filter by nested product name:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_name=Apple"
+        ```
 
-        Filter by top-level fields:
-            GET /auto/iterable/?category_name=Electronics&category_id=1
+        Filter by nested product properties:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_price__gte=2.0&product_is_active=true"
+        ```
 
-        Ordering by nested fields:
-            GET /auto/iterable/?ordering=-product.price,product.name
+        Filter by category information:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?category_name=Berry"
+        ```
+
+        Complex nested filtering:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_name__icontains=fruit&category_id=1"
+        ```
     """
     products_data = [
         {

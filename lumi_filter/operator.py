@@ -27,6 +27,10 @@ def generic_ilike_operator(left, right):
     return str(right).lower() in str(left).lower()
 
 
+def generic_in_operator(left, right):
+    return right in left
+
+
 def operator_curry(operator_name):
     """Create a curried operator function for peewee fields.
 

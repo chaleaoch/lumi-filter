@@ -4,7 +4,7 @@ from functools import partial
 
 import peewee
 
-from lumi_filter.operator import generic_ilike_operator, generic_like_operator
+from lumi_filter.operator import generic_ilike_operator, generic_in_operator, generic_like_operator
 
 logger = logging.getLogger("lumi_filter.backend")
 
@@ -25,12 +25,13 @@ class PeeweeBackend:
         "lte": operator.le,
         "gt": operator.gt,
         "lt": operator.lt,
-        "in": operator.mod,
-        "iin": operator.pow,
+        "contain": operator.mod,
+        "icontain": operator.pow,
+        "in": operator.lshift,
     }
 
     def __init__(self):
-        pass
+        self.order_fields = []
 
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
@@ -43,12 +44,12 @@ class PeeweeBackend:
         :return: Filtered query
         :raises TypeError: If peewee_field is not a Peewee Field instance
         """
-        if lookup_expr == "in":
+        if lookup_expr == "contain":
             if isinstance(query.model._meta.database, peewee.SqliteDatabase):
                 value = f"*{value}*"
             else:
                 value = f"%{value}%"
-        elif lookup_expr == "iin":
+        elif lookup_expr == "icontain":
             value = f"%{value}%"
 
         if not isinstance(peewee_field, peewee.Field):
@@ -57,8 +58,7 @@ class PeeweeBackend:
         operator_func = cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr]
         return query.where(operator_func(peewee_field, value))
 
-    @classmethod
-    def order(cls, query, field, is_negative=False):
+    def order(self, query, field, is_negative=False):
         """Apply ordering to the query.
 
         :param query: The Peewee query to order
@@ -68,8 +68,8 @@ class PeeweeBackend:
         :return: Ordered query
         """
 
-        direction = "DESC" if is_negative else "ASC"
-        return query.order_by(peewee.SQL(f"{field.name} {direction}"))
+        self.order_fields.append(field.desc() if is_negative else field.asc())
+        return query.order_by(*self.order_fields)
 
 
 class IterableBackend:
@@ -86,8 +86,9 @@ class IterableBackend:
         "lte": operator.le,
         "gt": operator.gt,
         "lt": operator.lt,
-        "in": generic_like_operator,
-        "iin": generic_ilike_operator,
+        "contain": generic_like_operator,
+        "icontain": generic_ilike_operator,
+        "in": generic_in_operator,
     }
 
     @classmethod

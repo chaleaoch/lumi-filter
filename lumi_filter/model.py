@@ -254,7 +254,7 @@ class Model(metaclass=ModelMeta):
         :type request_args: dict
         :return: Filtered data
         """
-        backend_class = cls._get_backend_class(data)
+        backend = cls._get_backend(data)
 
         for req_field_name, req_value in request_args.items():
             field_info = cls.__supported_query_key_field_dict__.get(req_field_name)
@@ -268,7 +268,10 @@ class Model(metaclass=ModelMeta):
             if not is_valid:
                 continue
 
-            data = backend_class.filter(data, field.source, parsed_value, lookup_expr)
+            if lookup_expr in ["in", "iin"]:
+                parsed_value = parsed_value.split(",")
+
+            data = backend.filter(data, field.source, parsed_value, lookup_expr)
 
         return data
 
@@ -284,7 +287,7 @@ class Model(metaclass=ModelMeta):
         ordering = request_args.get("ordering", "")
         if not ordering:
             return data
-        backend = cls._get_backend_class(data)
+        backend = cls._get_backend(data)
         for field_name in ordering.split(","):
             is_negative = field_name.startswith("-")
             if is_negative:
@@ -297,10 +300,10 @@ class Model(metaclass=ModelMeta):
         return data
 
     @classmethod
-    def _get_backend_class(cls, data):
+    def _get_backend(cls, data):
         """Get appropriate backend class for data type."""
         if isinstance(data, peewee.ModelSelect):
-            return PeeweeBackend
+            return PeeweeBackend()
         elif isinstance(data, Iterable):
             return IterableBackend
         else:

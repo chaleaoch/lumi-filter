@@ -5,9 +5,7 @@ from app.db_model import Category, Product
 from extentions import database
 
 
-@click.command()
-@with_appcontext
-def initialize():
+def init_db():
     """Initialize the database with sample data."""
     click.echo("Initializing database...")
 
@@ -59,6 +57,24 @@ def initialize():
 
     database.close()
     click.echo("Database initialization completed!")
+
+
+def clean_db():
+    # Delete all records from both tables
+    Product.delete().execute()
+    Category.delete().execute()
+
+    # Reset SQLite sequence counters (equivalent to TRUNCATE behavior)
+    # database.execute_sql("DELETE FROM sqlite_sequence WHERE name='product'")
+    # database.execute_sql("DELETE FROM sqlite_sequence WHERE name='category'")
+
+    database.close()
+
+
+@click.command()
+@with_appcontext
+def initialize():
+    init_db()
 
 
 def init_app(app):

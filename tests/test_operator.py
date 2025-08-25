@@ -139,10 +139,10 @@ class TestOperatorCurry:
         # Create a mock field object
         mock_field = Mock()
         mock_field.__eq__ = Mock(return_value="equal_result")
-        
+
         curried_eq = operator_curry("__eq__")
         result = curried_eq(mock_field, "test_value")
-        
+
         # Verify the method was called with correct arguments
         mock_field.__eq__.assert_called_once_with("test_value")
         assert result == "equal_result"
@@ -152,13 +152,13 @@ class TestOperatorCurry:
         mock_field = Mock()
         mock_field.__gt__ = Mock(return_value="greater_result")
         mock_field.__lt__ = Mock(return_value="less_result")
-        
+
         curried_gt = operator_curry("__gt__")
         curried_lt = operator_curry("__lt__")
-        
+
         gt_result = curried_gt(mock_field, 10)
         lt_result = curried_lt(mock_field, 5)
-        
+
         mock_field.__gt__.assert_called_once_with(10)
         mock_field.__lt__.assert_called_once_with(5)
         assert gt_result == "greater_result"
@@ -172,9 +172,9 @@ class TestIsNullOperator:
         """Test Peewee is_null with true value."""
         mock_field = Mock(spec=peewee.Field)
         mock_field.is_null = Mock(return_value="null_expression")
-        
+
         result = is_null_operator(mock_field, "true")
-        
+
         mock_field.is_null.assert_called_once_with(True)
         assert result == "null_expression"
 
@@ -182,9 +182,9 @@ class TestIsNullOperator:
         """Test Peewee is_null with false value."""
         mock_field = Mock(spec=peewee.Field)
         mock_field.is_null = Mock(return_value="not_null_expression")
-        
+
         result = is_null_operator(mock_field, "false")
-        
+
         mock_field.is_null.assert_called_once_with(False)
         assert result == "not_null_expression"
 
@@ -192,9 +192,9 @@ class TestIsNullOperator:
         """Test Peewee is_null with other string values."""
         mock_field = Mock(spec=peewee.Field)
         mock_field.is_null = Mock(return_value="not_null_expression")
-        
+
         # Any value other than "true" should result in False being passed
         result = is_null_operator(mock_field, "false")
-        
+
         mock_field.is_null.assert_called_once_with(False)
         assert result == "not_null_expression"

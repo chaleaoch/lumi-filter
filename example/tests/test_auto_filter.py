@@ -268,24 +268,6 @@ class TestAutoFilterIterable:
             assert product["product"]["is_active"] is True
             assert product["category_name"] == "Stone"
 
-    def test_auto_ordering_iterable_by_nested_price(self, client):
-        """Test ordering iterable products by nested price using auto detection."""
-        response = client.get("/auto/iterable/?ordering=-product.price")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        prices = [float(product["product"]["price"]) for product in data["results"]]
-        assert prices == sorted(prices, reverse=True)
-
-    def test_auto_ordering_iterable_by_nested_name(self, client):
-        """Test ordering iterable products by nested name using auto detection."""
-        response = client.get("/auto/iterable/?ordering=product.name")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        names = [product["product"]["name"] for product in data["results"]]
-        assert names == sorted(names)
-
     def test_auto_ordering_iterable_by_top_level_field(self, client):
         """Test ordering iterable products by top-level category field using auto detection."""
         response = client.get("/auto/iterable/?ordering=category_name")

@@ -14,7 +14,7 @@ class FilterField:
     :type source: str or None
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "contains", "icontains"})
 
     def __init__(self, request_arg_name=None, source=None):
         self.request_arg_name = request_arg_name
@@ -37,7 +37,7 @@ class IntField(FilterField):
     Supports comparison operations like equality, greater than, less than, etc.
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in"})
 
     def parse_value(self, value):
         try:
@@ -53,7 +53,7 @@ class StrField(FilterField):
     Supports text matching operations including contains, equality, and comparisons.
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "nin"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in", "contains", "icontains"})
 
 
 class DecimalField(FilterField):
@@ -63,7 +63,7 @@ class DecimalField(FilterField):
     Provides precise decimal arithmetic for financial and scientific calculations.
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in"})
 
     def parse_value(self, value):
         try:
@@ -101,7 +101,7 @@ class DateField(FilterField):
     Accepts datetime.date objects or ISO format date strings (YYYY-MM-DD).
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in"})
 
     def parse_value(self, value):
         if isinstance(value, datetime.date):
@@ -119,7 +119,7 @@ class DateTimeField(FilterField):
     Accepts datetime.datetime objects or ISO format datetime strings (YYYY-MM-DDTHH:MM:SS).
     """
 
-    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte"})
+    SUPPORTED_LOOKUP_EXPR = frozenset({"", "!", "gt", "lt", "gte", "lte", "in"})
 
     def parse_value(self, value):
         if isinstance(value, datetime.datetime):

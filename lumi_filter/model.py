@@ -288,6 +288,7 @@ class Model(metaclass=ModelMeta):
         if not ordering:
             return data
         backend = cls._get_backend(data)
+        available_ordering = []
         for field_name in ordering.split(","):
             is_negative = field_name.startswith("-")
             if is_negative:
@@ -295,15 +296,14 @@ class Model(metaclass=ModelMeta):
             field = cls.__ordering_field_map__.get(field_name)
             if not field:
                 continue
-            data = backend.order(data, field.source, is_negative)
-
-        return data
+            available_ordering.append((field.source, is_negative))
+        return backend.order(data, available_ordering)
 
     @classmethod
     def _get_backend(cls, data):
         """Get appropriate backend class for data type."""
         if isinstance(data, peewee.ModelSelect):
-            return PeeweeBackend()
+            return PeeweeBackend
         elif isinstance(data, Iterable):
             return IterableBackend
         else:

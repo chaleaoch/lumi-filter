@@ -212,10 +212,10 @@ class TestAdvancedModelFilter:
 
         data = json.loads(response.data)
 
-        # Should find "Pineapple" which contains "apple" (case-sensitive)
+        # Should find "Pineapple" which contain "apple" (case-sensitive)
         names = [product["name"] for product in data["results"]]
         assert any("apple" in name for name in names)
-        # Verify that Pineapple is found since it contains "apple"
+        # Verify that Pineapple is found since it contain "apple"
         assert "Pineapple" in names
 
     def test_advanced_filter_by_name_icontains(self, client):
@@ -271,7 +271,7 @@ class TestAdvancedModelFilter:
             assert "fruit" in product["category_name"].lower()
 
     def test_advanced_complex_filtering_with_contains(self, client):
-        """Test complex filtering combining contains with other filters."""
+        """Test complex filtering combining contain with other filters."""
         response = client.get("/advanced-model/?name__icontains=berry&is_active=true&price__lte=5")
         assert response.status_code == 200
 
@@ -461,7 +461,7 @@ class TestAdvancedModelFilterIterable:
 
         data = json.loads(response.data)
 
-        # Should find "Pineapple" which contains "apple" (case-sensitive)
+        # Should find "Pineapple" which contain "apple" (case-sensitive)
         names = [product["product"]["name"] for product in data["results"]]
         assert any("apple" in name for name in names)
         assert "Pineapple" in names
@@ -504,7 +504,7 @@ class TestAdvancedModelFilterIterable:
             assert "fruit" in product["category_name"].lower()
 
     def test_advanced_complex_iterable_filtering_with_contains(self, client):
-        """Test complex iterable filtering combining contains with other filters."""
+        """Test complex iterable filtering combining contain with other filters."""
         response = client.get("/advanced-model/iterable/?product_name__icontains=berry&is_active=true&price__lte=5")
         assert response.status_code == 200
 
@@ -516,7 +516,7 @@ class TestAdvancedModelFilterIterable:
             assert float(product["product"]["price"]) <= 5.0
 
     def test_advanced_filter_iterable_case_sensitivity_comparison(self, client):
-        """Test comparing case-sensitive vs case-insensitive contains on iterable data."""
+        """Test comparing case-sensitive vs case-insensitive contain on iterable data."""
         # Test with mixed case to verify case-insensitive behavior
         response = client.get("/advanced-model/iterable/?product_name__icontains=MANGO")
         assert response.status_code == 200

@@ -25,13 +25,13 @@ class PeeweeBackend:
         "lte": operator.le,
         "gt": operator.gt,
         "lt": operator.lt,
-        "contain": operator.mod,
-        "icontain": operator.pow,
+        "contains": operator.mod,
+        "icontains": operator.pow,
         "in": operator.lshift,
     }
 
     def __init__(self):
-        self.order_fields = []
+        pass
 
     @classmethod
     def filter(cls, query, peewee_field, value, lookup_expr):
@@ -44,12 +44,15 @@ class PeeweeBackend:
         :return: Filtered query
         :raises TypeError: If peewee_field is not a Peewee Field instance
         """
-        if lookup_expr == "contain":
-            if isinstance(query.model._meta.database, peewee.SqliteDatabase):
+        if lookup_expr == "contains":
+            if isinstance(query.model._meta.database, peewee.SqliteDatabase) or (
+                isinstance(query.model._meta.database, peewee.Proxy)
+                and isinstance(query.model._meta.database.obj, peewee.SqliteDatabase)
+            ):
                 value = f"*{value}*"
             else:
                 value = f"%{value}%"
-        elif lookup_expr == "icontain":
+        elif lookup_expr == "icontains":
             value = f"%{value}%"
 
         if not isinstance(peewee_field, peewee.Field):
@@ -58,7 +61,8 @@ class PeeweeBackend:
         operator_func = cls.LOOKUP_EXPR_OPERATOR_MAP[lookup_expr]
         return query.where(operator_func(peewee_field, value))
 
-    def order(self, query, field, is_negative=False):
+    @classmethod
+    def order(cls, query, ordering):
         """Apply ordering to the query.
 
         :param query: The Peewee query to order
@@ -67,9 +71,10 @@ class PeeweeBackend:
         :type is_negative: bool
         :return: Ordered query
         """
-
-        self.order_fields.append(field.desc() if is_negative else field.asc())
-        return query.order_by(*self.order_fields)
+        order_fields = []
+        for field, is_negative in ordering:
+            order_fields.append(field.desc() if is_negative else field.asc())
+        return query.order_by(*order_fields)
 
 
 class IterableBackend:
@@ -86,8 +91,8 @@ class IterableBackend:
         "lte": operator.le,
         "gt": operator.gt,
         "lt": operator.lt,
-        "contain": generic_like_operator,
-        "icontain": generic_ilike_operator,
+        "contains": generic_like_operator,
+        "icontains": generic_ilike_operator,
         "in": generic_in_operator,
     }
 
@@ -146,7 +151,7 @@ class IterableBackend:
         return ret
 
     @classmethod
-    def order(cls, data, key, is_reverse=False):
+    def order(cls, data, ordering):
         """Sort the data by key.
 
         :param data: The iterable data to sort
@@ -156,7 +161,9 @@ class IterableBackend:
         :return: Sorted data
         """
         try:
-            return sorted(data, key=lambda x: cls._get_nested_value(x, key), reverse=is_reverse)
+            for key, is_reverse in ordering[::-1]:
+                data = sorted(data, key=lambda x: cls._get_nested_value(x, key), reverse=is_reverse)
         except (KeyError, TypeError):
-            logger.warning("Failed to sort by key: %s", key)
+            logger.warning("Failed to sort by ordering: %s", ordering)
+        finally:
             return data

@@ -52,40 +52,79 @@ def list_products_basic():
 
     Examples:
         Basic request without filters:
-            GET /model/
+        ```bash
+        curl -X GET "http://localhost:5000/model/"
+        ```
 
-        Filter by product name (case-insensitive contains):
-            GET /model/?name__in=Apple,Orange
+        Filter by product name using __in lookup:
+        ```bash
+        curl -X GET "http://localhost:5000/model/?name__in=Apple,Orange"
+        ```
 
         Filter by price range:
-            GET /model/?price__gte=100&price__lte=500
+        ```bash
+        curl -X GET "http://localhost:5000/model/?price__gte=3&price__lte=6"
+        ```
 
         Filter by active products only:
-            GET /model/?is_active=true
+        ```bash
+        curl -X GET "http://localhost:5000/model/?is_active=true"
+        ```
 
-        Filter by creation date range:
-            GET /model/?created_at__gte=2024-01-01T00:00:00&created_at__lte=2024-12-31T23:59:59
-
-        Filter by category ID:
-            GET /model/?category_id=1
+        Filter by inactive products:
+        ```bash
+        curl -X GET "http://localhost:5000/model/?is_active=false"
+        ```
 
         Filter by category name:
-            GET /model/?category_name=Electronics
+        ```bash
+        curl -X GET "http://localhost:5000/model/?category_name=Fruit"
+        ```
+
+        Filter by Citrus category:
+        ```bash
+        curl -X GET "http://localhost:5000/model/?category_name=Citrus"
+        ```
+
+        Complex filtering (Berry category, under $5, active products):
+        ```bash
+        curl -X GET "http://localhost:5000/model/?category_name=Berry&price__lte=5&is_active=true"
+        ```
+
+        Filter by creation date range:
+        ```bash
+        curl -X GET "http://localhost:5000/model/?created_at__gte=2024-01-01T00:00:00&created_at__lte=2024-12-31T23:59:59"
+        ```
+
+        Filter by category ID:
+        ```bash
+        curl -X GET "http://localhost:5000/model/?category_id=1"
+        ```
 
         Complex filtering with multiple conditions:
-            GET /model/?name__in=Apple,Orange&price__lte=800&is_active=true&category_name=Electronics
+        ```bash
+        curl -X GET "http://localhost:5000/model/?name__in=Apple,Orange&price__lte=800&is_active=true&category_name=Electronics"
+        ```
 
         Ordering results (ascending by price):
-            GET /model/?ordering=price
+        ```bash
+        curl -X GET "http://localhost:5000/model/?ordering=price"
+        ```
 
         Ordering results (descending by creation date):
-            GET /model/?ordering=-created_at
+        ```bash
+        curl -X GET "http://localhost:5000/model/?ordering=-created_at"
+        ```
 
         Multiple ordering criteria:
-            GET /model/?ordering=category_name,price
+        ```bash
+        curl -X GET "http://localhost:5000/model/?ordering=category_name,price"
+        ```
 
         Combining filters with ordering:
-            GET /model/?is_active=true&price__gte=100&ordering=-price
+        ```bash
+        curl -X GET "http://localhost:5000/model/?is_active=true&price__gte=100&ordering=-price"
+        ```
     """
     query = Product.select(
         Product.id,
@@ -137,40 +176,64 @@ def list_products_iterable():
 
     Examples:
         Basic request without filters:
-            GET /model/iterable/
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/"
+        ```
 
-        Filter by product name (case-insensitive contains):
-            GET /model/iterable/?name__in=Apple,Orange
+        Filter by product name using __in lookup:
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?name__in=Apple,Orange"
+        ```
 
         Filter by price range:
-            GET /model/iterable/?price__gte=100&price__lte=500
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?price__gte=100&price__lte=500"
+        ```
 
         Filter by active products only:
-            GET /model/iterable/?is_active=true
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?is_active=true"
+        ```
 
         Filter by creation date range:
-            GET /model/iterable/?created_at__gte=2024-01-01T00:00:00&created_at__lte=2024-12-31T23:59:59
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?created_at__gte=2024-01-01T00:00:00&created_at__lte=2024-12-31T23:59:59"
+        ```
 
         Filter by category ID:
-            GET /model/iterable/?category_id=1
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?category_id=1"
+        ```
 
         Filter by category name:
-            GET /model/iterable/?category_name=Electronics
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?category_name=Electronics"
+        ```
 
         Complex filtering with multiple conditions:
-            GET /model/iterable/?name__in=Apple,Orange&price__lte=800&is_active=true&category_name=Electronics
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?name__in=Apple,Orange&price__lte=800&is_active=true&category_name=Electronics"
+        ```
 
         Ordering results (ascending by price):
-            GET /model/iterable/?ordering=price
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?ordering=price"
+        ```
 
         Ordering results (descending by creation date):
-            GET /model/iterable/?ordering=-created_at
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?ordering=-created_at"
+        ```
 
         Multiple ordering criteria:
-            GET /model/iterable/?ordering=category_name,price
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?ordering=category_name,price"
+        ```
 
         Combining filters with ordering:
-            GET /model/iterable/?is_active=true&price__gte=100&ordering=-price
+        ```bash
+        curl -X GET "http://localhost:5000/model/iterable/?is_active=true&price__gte=100&ordering=-price"
+        ```
     """
     # Simulate iterable data structure (could be from JSON, API, etc.)
     products_data = [

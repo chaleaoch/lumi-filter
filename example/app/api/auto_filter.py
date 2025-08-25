@@ -40,10 +40,10 @@ Examples:
 
 from __future__ import annotations
 
-from app.db_model import Category, Product
 from flask import Blueprint, jsonify, request
-
 from lumi_filter.shortcut import AutoQueryModel
+
+from app.db_model import Category, Product
 
 bp = Blueprint("auto_iterable", __name__, url_prefix="/auto/")
 
@@ -67,9 +67,14 @@ def list_products_auto():
             - category_name (str): Associated category name
 
     Examples:
-        Basic filtering:
+        Basic filtering (get all products):
         ```bash
         curl -X GET "http://localhost:5000/auto/"
+        ```
+
+        Filter by name using __in lookup:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?name__in=Apple,Orange"
         ```
 
         Filter by name (case-insensitive contains):
@@ -79,7 +84,7 @@ def list_products_auto():
 
         Filter by price range:
         ```bash
-        curl -X GET "http://localhost:5000/auto/?price__gte=1.0&price__lte=3.0"
+        curl -X GET "http://localhost:5000/auto/?price__gte=2&price__lte=4"
         ```
 
         Filter by active status:
@@ -87,14 +92,39 @@ def list_products_auto():
         curl -X GET "http://localhost:5000/auto/?is_active=true"
         ```
 
-        Filter by category:
+        Filter by inactive status:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?is_active=false"
+        ```
+
+        Filter by category name:
         ```bash
         curl -X GET "http://localhost:5000/auto/?category_name=Fruit"
         ```
 
-        Complex filtering:
+        Filter for citrus fruits:
         ```bash
-        curl -X GET "http://localhost:5000/auto/?name__icontains=berry&is_active=true&price__lt=6.0"
+        curl -X GET "http://localhost:5000/auto/?category_name=Citrus"
+        ```
+
+        Complex filtering (active berry products under $3):
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?is_active=true&price__lte=3&category_name=Berry"
+        ```
+
+        Ordering by price (ascending):
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?ordering=price"
+        ```
+
+        Ordering by price (descending):
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?ordering=-price"
+        ```
+
+        Complex filtering with ordering:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/?name__icontains=berry&is_active=true&price__lt=6.0&ordering=-price"
         ```
     """
     query = Product.select(
@@ -142,7 +172,7 @@ def list_products_iterable_auto():
         curl -X GET "http://localhost:5000/auto/iterable/?product_name=Apple"
         ```
 
-        Filter by nested product properties:
+        Filter by nested product properties (price and active status):
         ```bash
         curl -X GET "http://localhost:5000/auto/iterable/?product_price__gte=2.0&product_is_active=true"
         ```
@@ -152,9 +182,24 @@ def list_products_iterable_auto():
         curl -X GET "http://localhost:5000/auto/iterable/?category_name=Berry"
         ```
 
+        Filter by product ID:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_id=1"
+        ```
+
         Complex nested filtering:
         ```bash
         curl -X GET "http://localhost:5000/auto/iterable/?product_name__icontains=fruit&category_id=1"
+        ```
+
+        Filter by nested product price range:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_price__gte=1.0&product_price__lte=5.0"
+        ```
+
+        Complex filtering with multiple nested conditions:
+        ```bash
+        curl -X GET "http://localhost:5000/auto/iterable/?product_is_active=true&product_price__lt=4.0&category_name=Tropical"
         ```
     """
     products_data = [

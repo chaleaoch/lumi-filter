@@ -1,500 +1,464 @@
-"""
-Test Model class core functionality
+"""Tests for model module."""
 
-This file tests:
-- Model creation and initialization
-- Filtering functionality
-- Sorting functionality
-- Method chaining
-"""
+from unittest.mock import Mock
 
-import datetime
-import decimal
+import peewee
+import pydantic
+import pytest
 
-from lumi_filter.field import BooleanField, DateField, DecimalField, IntField, StrField
-from lumi_filter.model import Model
+from lumi_filter.field import FilterField, IntField, StrField
+from lumi_filter.model import MetaModel, Model, ModelMeta
 
 
-class TestBasicModel:
-    """Test basic model functionality"""
+class TestMetaModel:
+    """Test the MetaModel class."""
 
-    def test_model_init(self, sample_dict_data, sample_request_args):
-        """Test model initialization"""
-        model = Model(sample_dict_data, sample_request_args)
-        assert model.data == sample_dict_data
-        assert model.request_args == sample_request_args
+    def test_init_default(self):
+        """Test MetaModel initialization with default values."""
+        meta = MetaModel()
+        assert meta.schema is None
+        assert meta.fields == []
 
-    def test_model_result(self, sample_dict_data, empty_request_args):
-        """Test getting results"""
-        model = Model(sample_dict_data, empty_request_args)
-        result = model.result()
-        assert result == sample_dict_data
+    def test_init_with_params(self):
+        """Test MetaModel initialization with parameters."""
+        meta = MetaModel(schema="test_schema", fields=["field1", "field2"])
+        assert meta.schema == "test_schema"
+        assert meta.fields == ["field1", "field2"]
+
+    def test_is_peewee_model_true(self, setup_test_db):
+        """Test _is_peewee_model with actual Peewee model."""
+        from conftest import Product
+        
+        meta = MetaModel()
+        assert meta._is_peewee_model(Product) is True
+
+    def test_is_peewee_model_false(self):
+        """Test _is_peewee_model with non-Peewee class."""
+        meta = MetaModel()
+        assert meta._is_peewee_model(str) is False
+        assert meta._is_peewee_model("not_a_class") is False
+
+    def test_is_pydantic_model_true(self):
+        """Test _is_pydantic_model with actual Pydantic model."""
+        class TestModel(pydantic.BaseModel):
+            name: str
+        
+        meta = MetaModel()
+        assert meta._is_pydantic_model(TestModel) is True
+
+    def test_is_pydantic_model_false(self):
+        """Test _is_pydantic_model with non-Pydantic class."""
+        meta = MetaModel()
+        assert meta._is_pydantic_model(str) is False
+        assert meta._is_pydantic_model("not_a_class") is False
+
+    def test_process_peewee_fields(self, setup_test_db):
+        """Test processing Peewee fields."""
+        from conftest import Product
+        
+        meta = MetaModel(schema=Product)
+        fields = meta._process_peewee_fields()
+        
+        # Check that fields are generated
+        assert "name" in fields
+        assert "price" in fields
+        assert "is_active" in fields
+        
+        # Check field types and sources
+        assert isinstance(fields["name"].source, peewee.Field)
+        assert isinstance(fields["price"].source, peewee.Field)
+
+    def test_process_peewee_fields_with_field_filter(self, setup_test_db):
+        """Test processing Peewee fields with field filtering."""
+        from conftest import Product
+        
+        meta = MetaModel(schema=Product, fields=["name", "price"])
+        fields = meta._process_peewee_fields()
+        
+        # Should only include specified fields
+        assert "name" in fields
+        assert "price" in fields
+        assert "is_active" not in fields
+
+    def test_process_pydantic_fields(self):
+        """Test processing Pydantic fields."""
+        class TestModel(pydantic.BaseModel):
+            name: str
+            age: int
+            active: bool
+        
+        meta = MetaModel(schema=TestModel)
+        fields = meta._process_pydantic_fields()
+        
+        assert "name" in fields
+        assert "age" in fields
+        assert "active" in fields
+        
+        # Check request_arg_name and source
+        assert fields["name"].request_arg_name == "name"
+        assert fields["name"].source == "name"
+
+    def test_process_pydantic_nested_fields(self):
+        """Test processing nested Pydantic fields."""
+        class ProfileModel(pydantic.BaseModel):
+            bio: str
+            score: int
+        
+        class UserModel(pydantic.BaseModel):
+            name: str
+            profile: ProfileModel
+        
+        meta = MetaModel(schema=UserModel)
+        fields = meta._process_pydantic_fields()
+        
+        assert "name" in fields
+        assert "profile_bio" in fields
+        assert "profile_score" in fields
+        
+        # Check nested field configuration
+        assert fields["profile_bio"].request_arg_name == "profile.bio"
+        assert fields["profile_bio"].source == "profile.bio"
+
+    def test_is_nested_pydantic_model(self):
+        """Test _is_nested_pydantic_model method."""
+        class NestedModel(pydantic.BaseModel):
+            value: str
+        
+        # Create a mock field info
+        mock_field = Mock()
+        mock_field.annotation = NestedModel
+        
+        meta = MetaModel()
+        assert meta._is_nested_pydantic_model(mock_field) is True
+        
+        # Test with non-model annotation
+        mock_field.annotation = str
+        assert meta._is_nested_pydantic_model(mock_field) is False
+
+    def test_get_filter_fields_no_schema(self):
+        """Test get_filter_fields with no schema."""
+        meta = MetaModel()
+        fields = meta.get_filter_fields()
+        assert fields == {}
+
+    def test_get_filter_fields_peewee(self, setup_test_db):
+        """Test get_filter_fields with Peewee schema."""
+        from conftest import Product
+        
+        meta = MetaModel(schema=Product)
+        fields = meta.get_filter_fields()
+        
+        assert len(fields) > 0
+        assert "name" in fields
+        assert isinstance(fields["name"], FilterField)
+
+    def test_get_filter_fields_pydantic(self):
+        """Test get_filter_fields with Pydantic schema."""
+        class TestModel(pydantic.BaseModel):
+            name: str
+            value: int
+        
+        meta = MetaModel(schema=TestModel)
+        fields = meta.get_filter_fields()
+        
+        assert len(fields) > 0
+        assert "name" in fields
+        assert isinstance(fields["name"], FilterField)
 
 
-class SimpleFilterModel(Model):
-    """Simple filter model for testing"""
+class TestModelMeta:
+    """Test the ModelMeta metaclass."""
 
-    id = IntField()
-    name = StrField()
-    age = IntField()
-    active = BooleanField()
-    salary = DecimalField()
+    def test_create_simple_model(self):
+        """Test creating a simple model with explicit fields."""
+        class TestModel(Model):
+            name = StrField()
+            age = IntField()
+        
+        # Check that metaclass processed the fields correctly
+        assert hasattr(TestModel, "__supported_query_key_field_dict__")
+        assert hasattr(TestModel, "__ordering_field_map__")
+        
+        # Check supported query keys
+        supported_keys = TestModel.__supported_query_key_field_dict__
+        assert "name" in supported_keys
+        assert "name__contains" in supported_keys
+        assert "age" in supported_keys
+        assert "age__gt" in supported_keys
 
+    def test_create_model_with_meta(self, setup_test_db):
+        """Test creating model with Meta schema."""
+        from conftest import Product
+        
+        class ProductFilter(Model):
+            class Meta:
+                schema = Product
+        
+        # Check that schema fields were processed
+        supported_keys = ProductFilter.__supported_query_key_field_dict__
+        assert "name" in supported_keys
+        assert "price" in supported_keys
 
-class UserFilterModel(Model):
-    """User filter model - simulates real business scenarios"""
+    def test_field_configuration(self):
+        """Test that fields are configured correctly."""
+        class TestModel(Model):
+            test_field = StrField()
+        
+        field = TestModel.__ordering_field_map__["test_field"]
+        assert field.request_arg_name == "test_field"
+        assert field.source == "test_field"
 
-    id = IntField()
-    username = StrField()
-    email = StrField()
-    age = IntField()
-    is_active = BooleanField()
-    salary = DecimalField()
-    join_date = DateField()
+    def test_custom_field_names(self):
+        """Test fields with custom request_arg_name and source."""
+        class TestModel(Model):
+            display_name = StrField(request_arg_name="name", source="actual_name")
+        
+        field = TestModel.__ordering_field_map__["display_name"]
+        assert field.request_arg_name == "name"
+        assert field.source == "actual_name"
+        
+        # Check that query key uses request_arg_name
+        supported_keys = TestModel.__supported_query_key_field_dict__
+        assert "name" in supported_keys
+        assert "display_name" not in supported_keys
 
+    def test_field_name_validation_error(self):
+        """Test that field names with '__' raise ValueError."""
+        with pytest.raises(ValueError, match="cannot contain '__'"):
+            class TestModel(Model):
+                invalid_field = StrField(request_arg_name="field__with__double__underscore")
 
-class TestSimpleFilterModel:
-    """Test simple filter model"""
+    def test_lookup_expressions_generation(self):
+        """Test that lookup expressions are generated correctly."""
+        class TestModel(Model):
+            name = StrField()
+            age = IntField()
+        
+        supported_keys = TestModel.__supported_query_key_field_dict__
+        
+        # Test string field lookups
+        assert "name" in supported_keys
+        assert "name!" in supported_keys
+        assert "name__contains" in supported_keys
+        assert "name__icontains" in supported_keys
+        
+        # Test int field lookups (no contains)
+        assert "age" in supported_keys
+        assert "age__gt" in supported_keys
+        assert "age__lt" in supported_keys
+        assert "age__contains" not in supported_keys
 
-    def test_filter_by_name(self, sample_dict_data):
-        """Test filtering by name"""
-        request_args = {"name": "Alice"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
+    def test_source_type_consistency_error(self):
+        """Test that mixed source types raise ValueError."""
+        with pytest.raises(ValueError, match="different source types"):
+            class TestModel(Model):
+                string_source = StrField(source="string_field")
+                peewee_source = StrField(source=peewee.CharField())
 
-        assert len(filtered_data) == 1
-        assert filtered_data[0]["name"] == "Alice"
-
-    def test_filter_by_age_gte(self, sample_dict_data):
-        """Test filtering by age greater than or equal to"""
-        request_args = {"age__gte": "30"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        assert len(filtered_data) == 2
-        ages = [item["age"] for item in filtered_data]
-        assert all(age >= 30 for age in ages)
-
-    def test_filter_by_active(self, sample_dict_data):
-        """Test filtering by active status"""
-        request_args = {"active": "true"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        assert len(filtered_data) == 3
-        assert all(item["active"] is True for item in filtered_data)
-
-    def test_filter_by_salary_range(self, sample_dict_data):
-        """Test filtering by salary range"""
-        request_args = {"salary__gte": "5000", "salary__lt": "6000"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        assert len(filtered_data) == 2
-        for item in filtered_data:
-            salary = item["salary"]
-            assert decimal.Decimal("5000") <= salary < decimal.Decimal("6000")
-
-    def test_multiple_filters(self, sample_dict_data):
-        """Test multiple filters"""
-        request_args = {"active": "true", "age__gte": "30"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        assert len(filtered_data) == 2
-        for item in filtered_data:
-            assert item["active"] is True
-            assert item["age"] >= 30
-
-    def test_no_matching_filters(self, sample_dict_data):
-        """Test filters with no matches"""
-        request_args = {"name": "NonExistent"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        assert len(filtered_data) == 0
-
-    def test_invalid_field_ignored(self, sample_dict_data):
-        """Test invalid fields are ignored"""
-        request_args = {"invalid_field": "value", "name": "Alice"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        # Should only apply name filter, ignore invalid_field
-        assert len(filtered_data) == 1
-        assert filtered_data[0]["name"] == "Alice"
-
-    def test_invalid_value_ignored(self, sample_dict_data):
-        """Test invalid values are ignored"""
-        request_args = {
-            "age": "invalid_age",  # Invalid integer value
-            "name": "Alice",
-        }
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        filtered_data = list(model.filter().result())
-
-        # Should only apply name filter, ignore invalid age
-        assert len(filtered_data) == 1
-        assert filtered_data[0]["name"] == "Alice"
+    def test_extract_meta_options(self):
+        """Test Meta options extraction."""
+        class TestMeta:
+            schema = "test_schema"
+            fields = ["field1", "field2"]
+            _private = "should_be_ignored"
+        
+        attrs = {"Meta": TestMeta}
+        options = ModelMeta._extract_meta_options(attrs)
+        
+        assert options["schema"] == "test_schema"
+        assert options["fields"] == ["field1", "field2"]
+        assert "_private" not in options
+        assert "Meta" not in attrs  # Should be removed
 
 
-class TestModelOrdering:
-    """Test model ordering functionality"""
+class TestModel:
+    """Test the Model class."""
 
-    def test_order_by_age_asc(self, sample_dict_data):
-        """Test ordering by age ascending"""
-        request_args = {"ordering": "age"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        ordered_data = list(model.order().result())
+    def test_init(self, sample_products_data):
+        """Test Model initialization."""
+        request_args = {"name": "test"}
+        model = Model(sample_products_data, request_args)
+        
+        assert model.data == sample_products_data
+        assert model.request_args == request_args
 
-        ages = [item["age"] for item in ordered_data]
-        assert ages == sorted(ages)
+    def test_filter_and_result_chaining(self, sample_products_data):
+        """Test filter and result method chaining."""
+        class ProductFilter(Model):
+            name = StrField()
+            price = StrField()  # Using StrField for simplicity
+        
+        request_args = {"name": "Laptop"}
+        model = ProductFilter(sample_products_data, request_args)
+        
+        result = model.filter().result()
+        
+        # Should filter for items with "Laptop" in name
+        assert len(result) == 1
+        assert result[0]["name"] == "Laptop"
 
-    def test_order_by_age_desc(self, sample_dict_data):
-        """Test ordering by age descending"""
-        request_args = {"ordering": "-age"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        ordered_data = list(model.order().result())
-
-        ages = [item["age"] for item in ordered_data]
-        assert ages == sorted(ages, reverse=True)
-
-    def test_order_by_name(self, sample_dict_data):
-        """Test ordering by name"""
+    def test_order_and_result_chaining(self, sample_products_data):
+        """Test order and result method chaining."""
+        class ProductFilter(Model):
+            name = StrField()
+            price = StrField()
+        
         request_args = {"ordering": "name"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        ordered_data = list(model.order().result())
-
-        names = [item["name"] for item in ordered_data]
+        model = ProductFilter(sample_products_data, request_args)
+        
+        result = model.order().result()
+        
+        # Should be ordered by name
+        names = [item["name"] for item in result]
         assert names == sorted(names)
 
-    def test_multiple_ordering(self, sample_dict_data):
-        """Test multiple field ordering"""
-        # Add a record with the same age to test multiple field ordering
-        test_data = sample_dict_data + [
-            {
-                "id": 5,
-                "name": "Eve",
-                "age": 30,
-                "active": True,
-                "salary": decimal.Decimal("5200.00"),
-            }
-        ]
+    def test_cls_filter_with_iterable_data(self, sample_products_data):
+        """Test cls_filter method with iterable data."""
+        class ProductFilter(Model):
+            name = StrField()
+            is_active = StrField()  # Using StrField for simplicity
+        
+        request_args = {"is_active": "True"}
+        result = ProductFilter.cls_filter(sample_products_data, request_args)
+        
+        # Should filter for active products
+        active_items = [item for item in result if item["is_active"]]
+        assert len(active_items) > 0
 
-        request_args = {"ordering": "age,name"}
-        model = SimpleFilterModel(test_data, request_args)
-        ordered_data = list(model.order().result())
-
-        # Check if records with the same age are sorted by name
-        age_30_records = [item for item in ordered_data if item["age"] == 30]
-        names_age_30 = [item["name"] for item in age_30_records]
-        assert names_age_30 == sorted(names_age_30)
-
-    def test_no_ordering(self, sample_dict_data):
-        """Test no ordering parameters"""
-        request_args = {}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        ordered_data = list(model.order().result())
-
-        # Should maintain original order
-        assert ordered_data == sample_dict_data
-
-    def test_invalid_ordering_field(self, sample_dict_data):
-        """Test invalid ordering field"""
-        request_args = {"ordering": "invalid_field"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        ordered_data = list(model.order().result())
-
-        # Should maintain original order without error
-        assert ordered_data == sample_dict_data
-
-
-class TestModelChaining:
-    """Test model method chaining"""
-
-    def test_filter_then_order(self, sample_dict_data):
-        """Test filter then order"""
-        request_args = {"active": "true", "ordering": "-age"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        result = list(model.filter().order().result())
-
-        # Check filter result: only active users
-        assert all(item["active"] is True for item in result)
-
-        # Check order result: by age descending
-        ages = [item["age"] for item in result]
-        assert ages == sorted(ages, reverse=True)
-
-    def test_order_then_filter(self, sample_dict_data):
-        """Test order then filter (note: order matters for list data)"""
-        request_args = {"age__gte": "30", "ordering": "name"}
-        model = SimpleFilterModel(sample_dict_data, request_args)
-        result = list(model.order().filter().result())
-
-        # Check filter result: age >= 30
-        assert all(item["age"] >= 30 for item in result)
-
-        # Note: order then filter result may differ from filter then order
-        assert len(result) >= 1
-
-
-class TestModelEdgeCases:
-    """Test model edge cases"""
-
-    def test_empty_data(self, empty_request_args):
-        """Test empty data"""
-        empty_data = []
-        model = SimpleFilterModel(empty_data, empty_request_args)
-        result = list(model.filter().order().result())
-
-        assert result == []
-
-    def test_empty_request_args(self, sample_dict_data):
-        """Test empty request arguments"""
-        model = SimpleFilterModel(sample_dict_data, {})
-        result = list(model.filter().order().result())
-
-        assert result == sample_dict_data
-
-    def test_cls_filter_method(self, sample_dict_data):
-        """Test class method filtering"""
-        request_args = {"name": "Alice"}
-        filtered_data = SimpleFilterModel.cls_filter(sample_dict_data, request_args)
-        result = list(filtered_data)
-
+    def test_cls_filter_with_invalid_field(self, sample_products_data):
+        """Test cls_filter ignores unknown fields."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {"unknown_field": "value", "name": "Laptop"}
+        result = ProductFilter.cls_filter(sample_products_data, request_args)
+        
+        # Should ignore unknown_field and filter by name
         assert len(result) == 1
-        assert result[0]["name"] == "Alice"
+        assert result[0]["name"] == "Laptop"
 
-    def test_cls_order_method(self, sample_dict_data):
-        """Test class method ordering"""
-        request_args = {"ordering": "age"}
-        ordered_data = SimpleFilterModel.cls_order(sample_dict_data, request_args)
-        result = list(ordered_data)
+    def test_cls_filter_with_invalid_value(self, sample_products_data):
+        """Test cls_filter ignores invalid values."""
+        class ProductFilter(Model):
+            age = IntField()  # Will fail to parse non-numeric values
+        
+        request_args = {"age": "not_a_number"}
+        result = ProductFilter.cls_filter(sample_products_data, request_args)
+        
+        # Should return all data since invalid value is ignored
+        assert len(result) == len(sample_products_data)
 
-        ages = [item["age"] for item in result]
-        assert ages == sorted(ages)
+    def test_cls_filter_with_in_lookup(self, sample_products_data):
+        """Test cls_filter with 'in' lookup expression."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {"name__in": "Laptop,Smartphone"}
+        result = ProductFilter.cls_filter(sample_products_data, request_args)
+        
+        # Should find items with names in the list
+        names = [item["name"] for item in result]
+        assert "Laptop" in names
+        assert "Smartphone" in names
 
+    def test_cls_order_ascending(self, sample_products_data):
+        """Test cls_order with ascending order."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {"ordering": "name"}
+        result = ProductFilter.cls_order(sample_products_data, request_args)
+        
+        names = [item["name"] for item in result]
+        assert names == sorted(names)
 
-class TestIntegrationScenarios:
-    """Integration test scenarios for complete workflows"""
+    def test_cls_order_descending(self, sample_products_data):
+        """Test cls_order with descending order."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {"ordering": "-name"}
+        result = ProductFilter.cls_order(sample_products_data, request_args)
+        
+        names = [item["name"] for item in result]
+        assert names == sorted(names, reverse=True)
 
-    @property
-    def sample_users(self):
-        """Mock user data"""
-        return [
-            {
-                "id": 1,
-                "username": "alice_smith",
-                "email": "alice@example.com",
-                "age": 28,
-                "is_active": True,
-                "salary": decimal.Decimal("75000.00"),
-                "join_date": datetime.date(2020, 1, 15),
-            },
-            {
-                "id": 2,
-                "username": "bob_jones",
-                "email": "bob@example.com",
-                "age": 32,
-                "is_active": True,
-                "salary": decimal.Decimal("85000.00"),
-                "join_date": datetime.date(2019, 6, 10),
-            },
-            {
-                "id": 3,
-                "username": "charlie_brown",
-                "email": "charlie@company.com",
-                "age": 26,
-                "is_active": False,
-                "salary": decimal.Decimal("65000.00"),
-                "join_date": datetime.date(2021, 3, 22),
-            },
-            {
-                "id": 4,
-                "username": "diana_prince",
-                "email": "diana@example.com",
-                "age": 35,
-                "is_active": True,
-                "salary": decimal.Decimal("95000.00"),
-                "join_date": datetime.date(2018, 11, 5),
-            },
-            {
-                "id": 5,
-                "username": "eve_wilson",
-                "email": "eve@company.com",
-                "age": 29,
-                "is_active": False,
-                "salary": decimal.Decimal("70000.00"),
-                "join_date": datetime.date(2020, 8, 18),
-            },
-        ]
+    def test_cls_order_multiple_fields(self, sample_products_data):
+        """Test cls_order with multiple fields."""
+        class ProductFilter(Model):
+            category_name = StrField()
+            name = StrField()
+        
+        request_args = {"ordering": "category_name,-name"}
+        result = ProductFilter.cls_order(sample_products_data, request_args)
+        
+        # Should order by category first, then by name descending
+        prev_category = None
+        prev_name = None
+        for item in result:
+            if prev_category is not None:
+                if item["category_name"] == prev_category:
+                    # Within same category, names should be in descending order
+                    assert item["name"] <= prev_name
+                else:
+                    # Categories should be in ascending order
+                    assert item["category_name"] >= prev_category
+            prev_category = item["category_name"]
+            prev_name = item["name"]
 
-    def test_hr_search_active_employees(self):
-        """HR scenario: Search active employees"""
-        # Find all active employees, sorted by salary in descending order
-        request_args = {"is_active": "true", "ordering": "-salary"}
+    def test_cls_order_no_ordering(self, sample_products_data):
+        """Test cls_order with no ordering parameter."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {}
+        result = ProductFilter.cls_order(sample_products_data, request_args)
+        
+        # Should return original data unchanged
+        assert result == sample_products_data
 
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
+    def test_cls_order_invalid_field(self, sample_products_data):
+        """Test cls_order ignores invalid field names."""
+        class ProductFilter(Model):
+            name = StrField()
+        
+        request_args = {"ordering": "invalid_field,name"}
+        result = ProductFilter.cls_order(sample_products_data, request_args)
+        
+        # Should ignore invalid_field and order by name
+        names = [item["name"] for item in result]
+        assert names == sorted(names)
 
-        # Verify results
-        assert len(results) == 3  # Only 3 active employees
-        assert all(user["is_active"] for user in results)
+    def test_get_backend_peewee(self, peewee_query):
+        """Test _get_backend with Peewee query."""
+        from lumi_filter.backend import PeeweeBackend
+        
+        backend = Model._get_backend(peewee_query)
+        assert backend == PeeweeBackend
 
-        # Verify sorting: salary descending
-        salaries = [user["salary"] for user in results]
-        assert salaries == sorted(salaries, reverse=True)
+    def test_get_backend_iterable(self, sample_products_data):
+        """Test _get_backend with iterable data."""
+        from lumi_filter.backend import IterableBackend
+        
+        backend = Model._get_backend(sample_products_data)
+        assert backend == IterableBackend
 
-        # Verify specific results
-        assert results[0]["username"] == "diana_prince"  # Highest salary
-        assert (
-            results[-1]["username"] == "alice_smith"
-        )  # Lowest salary (among active employees)
+    def test_get_backend_unsupported_type(self):
+        """Test _get_backend with unsupported data type."""
+        with pytest.raises(TypeError, match="Unsupported data type"):
+            Model._get_backend("invalid_data_type")
 
-    def test_recruitment_age_filter(self):
-        """Recruitment scenario: Filter candidates by age range"""
-        # Find users aged between 25-30
-        request_args = {"age__gte": "25", "age__lte": "30", "ordering": "age"}
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
-
-        # Verify age range
-        assert len(results) == 3
-        for user in results:
-            assert 25 <= user["age"] <= 30
-
-        # Verify sorting
-        ages = [user["age"] for user in results]
-        assert ages == [26, 28, 29]  # Ascending order
-
-    def test_payroll_salary_analysis(self):
-        """Salary analysis scenario: High-salary employee statistics"""
-        # Find active employees with salary above 80000
-        request_args = {
-            "salary__gte": "80000",
-            "is_active": "true",
-            "ordering": "username",
-        }
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
-
-        # Verify results
-        assert len(results) == 2
-        for user in results:
-            assert user["salary"] >= decimal.Decimal("80000")
-            assert user["is_active"] is True
-
-        # Verify sorting: alphabetical order by username
-        usernames = [user["username"] for user in results]
-        assert usernames == ["bob_jones", "diana_prince"]
-
-    def test_email_domain_search(self):
-        """Email domain search scenario"""
-        # Find users with company.com domain
-        request_args = {"email__in": "company.com", "ordering": "join_date"}
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
-
-        # Verify results
-        assert len(results) == 2
-        for user in results:
-            assert "company.com" in user["email"]
-
-        # Verify sorting: by join date
-        join_dates = [user["join_date"] for user in results]
-        assert join_dates[0] < join_dates[1]  # Ascending order
-
-    def test_complex_multi_filter_scenario(self):
-        """Complex multi-condition filtering scenario"""
-        # Business requirement: Find active employees under 30, with salary between 70000-90000, ordered by age ascending
-        request_args = {
-            "age__lt": "30",
-            "is_active": "true",
-            "salary__gte": "70000",
-            "salary__lte": "90000",
-            "ordering": "age",
-        }
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
-
-        # Verify all conditions
-        assert len(results) == 1
-        user = results[0]
-
-        assert user["age"] < 30
-        assert user["is_active"] is True
-        assert decimal.Decimal("70000") <= user["salary"] <= decimal.Decimal("90000")
-        assert user["username"] == "alice_smith"
-
-    def test_no_results_scenario(self):
-        """No results scenario: overly strict filtering conditions"""
-        # Find users over 50 years old (does not exist in our test data)
-        request_args = {"age__gt": "50"}
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().result())
-
-        assert len(results) == 0
-
-    def test_invalid_input_handling(self):
-        """Handle invalid input scenario"""
-        # Contains invalid age value and invalid field
-        request_args = {
-            "age": "invalid_age",  # Invalid age
-            "nonexistent_field": "value",  # Non-existent field
-            "username": "alice_smith",  # Valid filter condition
-            "ordering": "username",
-        }
-
-        model = UserFilterModel(self.sample_users, request_args)
-        results = list(model.filter().order().result())
-
-        # Should ignore invalid input, only apply valid filter conditions
-        assert len(results) == 1
-        assert results[0]["username"] == "alice_smith"
-
-    def test_performance_with_large_dataset(self):
-        """Large dataset performance test (simulation)"""
-        # Create larger dataset
-        large_dataset = []
-        for i in range(100):
-            large_dataset.append(
-                {
-                    "id": i,
-                    "username": f"user_{i}",
-                    "email": f"user{i}@example.com",
-                    "age": 20 + (i % 40),  # Age 20-59
-                    "is_active": i % 3 != 0,  # About 2/3 of users are active
-                    "salary": decimal.Decimal(
-                        str(50000 + (i % 50) * 1000)
-                    ),  # Salary 50000-99000
-                    "join_date": datetime.date(2020, 1, 1) + datetime.timedelta(days=i),
-                }
-            )
-
-        # Execute complex query
-        request_args = {
-            "age__gte": "25",
-            "age__lt": "35",
-            "is_active": "true",
-            "salary__gte": "60000",
-            "ordering": "-salary",  # Simplified sorting, only by salary descending
-        }
-
-        model = UserFilterModel(large_dataset, request_args)
-        results = list(model.filter().order().result())
-
-        # Verify result correctness (not focusing on performance, only validating logic)
-        for user in results:
-            assert 25 <= user["age"] < 35
-            assert user["is_active"] is True
-            assert user["salary"] >= decimal.Decimal("60000")
-
-        # Verify sorting: by salary descending
-        if len(results) > 1:
-            salaries = [user["salary"] for user in results]
-            assert salaries == sorted(salaries, reverse=True)
+    def test_peewee_integration(self, setup_test_db):
+        """Test integration with Peewee models."""
+        from conftest import Product
+        
+        class ProductFilter(Model):
+            class Meta:
+                schema = Product
+        
+        query = Product.select()
+        request_args = {"name": "Laptop"}
+        
+        # This should work without errors
+        filtered_query = ProductFilter.cls_filter(query, request_args)
+        assert filtered_query is not None

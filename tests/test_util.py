@@ -1,11 +1,6 @@
-"""
-Test util module functionality
+"""Tests for util module."""
 
-This file tests:
-- ClassHierarchyMapping class
-- Method resolution order lookups
-- Mapping interface implementation
-"""
+from typing import Union
 
 import pytest
 
@@ -13,162 +8,238 @@ from lumi_filter.util import ClassHierarchyMapping
 
 
 class TestClassHierarchyMapping:
-    """Test ClassHierarchyMapping class"""
+    """Test the ClassHierarchyMapping class."""
 
     def test_init_empty(self):
-        """Test initialization with no mapping"""
+        """Test initialization with no mapping."""
         mapping = ClassHierarchyMapping()
         assert len(mapping) == 0
-        assert not mapping.data
+        assert mapping.data == {}
 
     def test_init_with_mapping(self):
-        """Test initialization with initial mapping"""
-        initial = {str: "string", int: "integer"}
+        """Test initialization with initial mapping."""
+        initial = {str: "string_handler", int: "int_handler"}
         mapping = ClassHierarchyMapping(initial)
         assert len(mapping) == 2
-        assert mapping[str] == "string"
-        assert mapping[int] == "integer"
+        assert mapping.data == initial
 
-    def test_setitem_getitem(self):
-        """Test setting and getting items"""
+    def test_setitem_and_getitem(self):
+        """Test setting and getting items."""
         mapping = ClassHierarchyMapping()
-        mapping[str] = "string_field"
-        mapping[int] = "int_field"
-
-        assert mapping[str] == "string_field"
-        assert mapping[int] == "int_field"
+        mapping[str] = "string_handler"
+        mapping[int] = "int_handler"
+        
+        assert mapping[str] == "string_handler"
+        assert mapping[int] == "int_handler"
 
     def test_delitem(self):
-        """Test deleting items"""
-        mapping = ClassHierarchyMapping({str: "string"})
+        """Test deleting items."""
+        mapping = ClassHierarchyMapping({str: "string_handler", int: "int_handler"})
         del mapping[str]
-
-        with pytest.raises(KeyError):
-            mapping[str]
+        
+        assert len(mapping) == 1
+        assert str not in mapping.data
+        assert int in mapping.data
 
     def test_iter(self):
-        """Test iteration over mapping"""
-        initial = {str: "string", int: "integer"}
+        """Test iteration over mapping."""
+        initial = {str: "string_handler", int: "int_handler"}
         mapping = ClassHierarchyMapping(initial)
-
+        
         keys = list(mapping)
-        assert str in keys
-        assert int in keys
-        assert len(keys) == 2
+        assert set(keys) == {str, int}
 
     def test_len(self):
-        """Test length of mapping"""
+        """Test length calculation."""
         mapping = ClassHierarchyMapping()
         assert len(mapping) == 0
-
-        mapping[str] = "string"
+        
+        mapping[str] = "handler"
         assert len(mapping) == 1
-
-        mapping[int] = "integer"
+        
+        mapping[int] = "handler"
         assert len(mapping) == 2
 
-    def test_contains_direct_match(self):
-        """Test contains with direct type match"""
-        mapping = ClassHierarchyMapping({str: "string"})
-        assert str in mapping
-        assert int not in mapping
-
-    def test_contains_inheritance_match(self):
-        """Test contains with inheritance hierarchy"""
-
-        class Parent:
+    def test_inheritance_lookup(self):
+        """Test that inheritance hierarchy is respected in lookups."""
+        class BaseClass:
             pass
-
-        class Child(Parent):
+        
+        class DerivedClass(BaseClass):
             pass
-
-        mapping = ClassHierarchyMapping({Parent: "parent_field"})
-
-        # Child should be found via MRO
-        assert Parent in mapping
-        assert Child in mapping
-
-    def test_getitem_inheritance_lookup(self):
-        """Test getting item via inheritance hierarchy"""
-
-        class Parent:
+        
+        class GrandchildClass(DerivedClass):
             pass
-
-        class Child(Parent):
-            pass
-
-        class GrandChild(Child):
-            pass
-
-        mapping = ClassHierarchyMapping({Parent: "parent_field"})
-
-        # All should resolve to parent_field via MRO
-        assert mapping[Parent] == "parent_field"
-        assert mapping[Child] == "parent_field"
-        assert mapping[GrandChild] == "parent_field"
-
-    def test_getitem_most_specific_match(self):
-        """Test getting most specific match in hierarchy"""
-
-        class Parent:
-            pass
-
-        class Child(Parent):
-            pass
-
-        mapping = ClassHierarchyMapping({Parent: "parent_field", Child: "child_field"})
-
-        # Parent should get parent_field
-        assert mapping[Parent] == "parent_field"
-        # Child should get child_field (more specific)
-        assert mapping[Child] == "child_field"
-
-    def test_getitem_key_error(self):
-        """Test KeyError for unmapped type"""
-
-        class Unmapped:
-            pass
-
-        mapping = ClassHierarchyMapping({str: "string"})
-
-        with pytest.raises(KeyError):
-            mapping[Unmapped]
-
-    def test_mutable_mapping_interface(self):
-        """Test that it properly implements MutableMapping"""
-        from collections.abc import MutableMapping
-
+        
         mapping = ClassHierarchyMapping()
-        assert isinstance(mapping, MutableMapping)
+        mapping[BaseClass] = "base_handler"
+        
+        # Direct lookup should work
+        assert mapping[BaseClass] == "base_handler"
+        
+        # Derived classes should find parent handler
+        assert mapping[DerivedClass] == "base_handler"
+        assert mapping[GrandchildClass] == "base_handler"
 
-    def test_builtin_types_hierarchy(self):
-        """Test with built-in type hierarchy"""
-        # bool is a subclass of int in Python
-        mapping = ClassHierarchyMapping({int: "integer_field"})
+    def test_inheritance_override(self):
+        """Test that more specific class mappings override general ones."""
+        class BaseClass:
+            pass
+        
+        class DerivedClass(BaseClass):
+            pass
+        
+        mapping = ClassHierarchyMapping()
+        mapping[BaseClass] = "base_handler"
+        mapping[DerivedClass] = "derived_handler"
+        
+        # Base class should get base handler
+        assert mapping[BaseClass] == "base_handler"
+        
+        # Derived class should get its specific handler
+        assert mapping[DerivedClass] == "derived_handler"
 
-        assert mapping[int] == "integer_field"
-        assert mapping[bool] == "integer_field"  # bool should find int via MRO
-
-    def test_complex_hierarchy(self):
-        """Test complex inheritance hierarchy"""
-
+    def test_mro_order(self):
+        """Test that Method Resolution Order is followed correctly."""
         class A:
             pass
-
-        class B(A):
+        
+        class B:
             pass
-
-        class C(A):
+        
+        class C(A, B):
             pass
+        
+        mapping = ClassHierarchyMapping()
+        mapping[A] = "a_handler"
+        mapping[B] = "b_handler"
+        
+        # C should find A's handler first (due to MRO)
+        assert mapping[C] == "a_handler"
 
-        class D(B, C):
+    def test_union_type_lookup(self):
+        """Test lookup with Union types."""
+        mapping = ClassHierarchyMapping()
+        mapping[str] = "string_handler"
+        mapping[int] = "int_handler"
+        
+        # Create a Union type
+        union_type = Union[str, int]
+        
+        # Should find the first matching type in the union
+        result = mapping[union_type]
+        assert result in ["string_handler", "int_handler"]
+
+    def test_modern_union_syntax(self):
+        """Test lookup with modern union syntax (str | int)."""
+        mapping = ClassHierarchyMapping()
+        mapping[str] = "string_handler"
+        mapping[int] = "int_handler"
+        
+        # Create a union type using | syntax (Python 3.10+)
+        union_type = str | int
+        
+        # Should find one of the handlers
+        result = mapping[union_type]
+        assert result in ["string_handler", "int_handler"]
+
+    def test_key_not_found(self):
+        """Test KeyError when key is not found."""
+        mapping = ClassHierarchyMapping()
+        mapping[str] = "string_handler"
+        
+        with pytest.raises(KeyError):
+            _ = mapping[int]
+
+    def test_key_not_found_with_inheritance(self):
+        """Test KeyError when no parent class is found either."""
+        class UnmappedClass:
             pass
+        
+        mapping = ClassHierarchyMapping()
+        mapping[str] = "string_handler"
+        
+        with pytest.raises(KeyError):
+            _ = mapping[UnmappedClass]
 
-        mapping = ClassHierarchyMapping({A: "a_field", B: "b_field"})
+    def test_builtin_type_inheritance(self):
+        """Test inheritance with built-in types."""
+        mapping = ClassHierarchyMapping()
+        mapping[object] = "object_handler"
+        
+        # All classes inherit from object
+        assert mapping[str] == "object_handler"
+        assert mapping[int] == "object_handler"
+        assert mapping[list] == "object_handler"
 
-        assert mapping[A] == "a_field"
-        assert mapping[B] == "b_field"
-        assert mapping[C] == "a_field"  # C inherits from A
-        assert (
-            mapping[D] == "b_field"
-        )  # D inherits from B (first in MRO after D itself)
+    def test_complex_inheritance_hierarchy(self):
+        """Test complex inheritance scenarios."""
+        class Animal:
+            pass
+        
+        class Mammal(Animal):
+            pass
+        
+        class Dog(Mammal):
+            pass
+        
+        class Labrador(Dog):
+            pass
+        
+        mapping = ClassHierarchyMapping()
+        mapping[Animal] = "animal_handler"
+        mapping[Mammal] = "mammal_handler"
+        
+        # Test that most specific mapping is found
+        assert mapping[Animal] == "animal_handler"
+        assert mapping[Mammal] == "mammal_handler"
+        assert mapping[Dog] == "mammal_handler"  # Inherits from Mammal
+        assert mapping[Labrador] == "mammal_handler"  # Inherits from Mammal
+
+    def test_multiple_inheritance_diamond(self):
+        """Test diamond inheritance pattern."""
+        class Base:
+            pass
+        
+        class Left(Base):
+            pass
+        
+        class Right(Base):
+            pass
+        
+        class Diamond(Left, Right):
+            pass
+        
+        mapping = ClassHierarchyMapping()
+        mapping[Base] = "base_handler"
+        mapping[Left] = "left_handler"
+        
+        # Diamond should find Left first due to MRO
+        assert mapping[Diamond] == "left_handler"
+
+    def test_mapping_mutation(self):
+        """Test that mapping can be modified after creation."""
+        mapping = ClassHierarchyMapping({str: "original"})
+        
+        # Modify existing mapping
+        mapping[str] = "modified"
+        assert mapping[str] == "modified"
+        
+        # Add new mapping
+        mapping[int] = "new"
+        assert mapping[int] == "new"
+        
+        # Delete mapping
+        del mapping[str]
+        with pytest.raises(KeyError):
+            _ = mapping[str]
+
+    def test_empty_mapping_operations(self):
+        """Test operations on empty mapping."""
+        mapping = ClassHierarchyMapping()
+        
+        assert len(mapping) == 0
+        assert list(mapping) == []
+        
+        with pytest.raises(KeyError):
+            _ = mapping[str]

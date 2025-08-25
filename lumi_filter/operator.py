@@ -28,7 +28,12 @@ def generic_ilike_operator(left, right):
 
 
 def generic_in_operator(left, right):
-    return right in left
+    # Expect right to be an iterable of candidates, check if left is a member
+    try:
+        return left in right
+    except TypeError:
+        # If right isn't iterable, fall back to equality
+        return left == right
 
 
 def operator_curry(operator_name):

@@ -10,7 +10,7 @@ ext_modules = []
 curr_path = os.path.dirname(__file__)
 src = os.path.join(curr_path, "app")
 build = os.path.join(curr_path, "build")
-os.mkdir(build, exist_ok=True)
+os.makedirs(build, exist_ok=True)
 
 
 def path_to_module(path):

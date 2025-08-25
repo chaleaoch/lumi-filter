@@ -8,8 +8,9 @@ from setuptools import Extension, setup
 
 ext_modules = []
 curr_path = os.path.dirname(__file__)
-src = os.path.join(curr_path, "src")
+src = os.path.join(curr_path, "app")
 build = os.path.join(curr_path, "build")
+os.mkdir(build, exist_ok=True)
 
 
 def path_to_module(path):
@@ -40,7 +41,7 @@ setup(
     ext_modules=cythonize(ext_modules, compiler_directives={"always_allow_keywords": True}),
     package_dir={"": src},
 )
-
+print(removed_file_path_list)
 for file_path in removed_file_path_list:
     os.remove(file_path)
     os.remove(file_path.replace(".py", ".c"))

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lumi-filter"
-version = "0.1.0"
+version = "0.2.0"
 description = "A powerful and flexible data filtering library with unified interface for multiple data sources"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -31,12 +31,11 @@ Repository = "https://github.com/chaleaoch/lumi_filter"
 
 [dependency-groups]
 dev = [
+    "mkdocs>=1.6.1",
+    "mkdocstrings[python]>=0.30.0",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
-    "sphinx>=8.2.3",
-    "sphinx-autobuild>=2024.10.3",
-    "sphinx-rtd-theme>=3.0.2",
 ]
 
 [tool.pyright]

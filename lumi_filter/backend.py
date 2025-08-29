@@ -33,7 +33,7 @@ class PeeweeBackend:
 
     Attributes:
         LOOKUP_EXPR_OPERATOR_MAP (dict): Mapping of lookup expressions
-            to corresponding Peewee operators
+            to corresponding Peewee operators.
     """
 
     LOOKUP_EXPR_OPERATOR_MAP = {
@@ -66,17 +66,18 @@ class PeeweeBackend:
         backends (SQLite uses FTS syntax with asterisks, others use SQL LIKE
         with percent signs).
 
-        :param query: The Peewee query to filter
-        :type query: peewee.Query
-        :param peewee_field: The Peewee field to filter on
-        :type peewee_field: peewee.Field
-        :param value: The value to filter by
-        :param lookup_expr: The lookup expression for filtering (e.g., '', '!',
-                           'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in')
-        :type lookup_expr: str
-        :return: Filtered query with the condition applied
-        :rtype: peewee.Query
-        :raises TypeError: If peewee_field is not a Peewee Field instance
+        Args:
+            query (peewee.Query): The Peewee query to filter.
+            peewee_field (peewee.Field): The Peewee field to filter on.
+            value: The value to filter by.
+            lookup_expr (str): The lookup expression for filtering (e.g., '', '!',
+                'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in').
+
+        Returns:
+            peewee.Query: Filtered query with the condition applied.
+
+        Raises:
+            TypeError: If peewee_field is not a Peewee Field instance.
         """
         if lookup_expr == "contains":
             if isinstance(query.model._meta.database, peewee.SqliteDatabase) or (
@@ -99,13 +100,14 @@ class PeeweeBackend:
     def order(cls, query, ordering):
         """Apply ordering to the query.
 
-        :param query: The Peewee query to order
-        :param ordering: List of tuples containing (field, is_negative) pairs
-                        where field is the Peewee field to order by and
-                        is_negative is a boolean indicating descending order
-        :type ordering: list of tuples
-        :return: Ordered query
-        :rtype: peewee.Query
+        Args:
+            query: The Peewee query to order.
+            ordering: List of tuples containing (field, is_negative) pairs
+                where field is the Peewee field to order by and
+                is_negative is a boolean indicating descending order.
+
+        Returns:
+            peewee.Query: Ordered query.
         """
         order_fields = []
         for field, is_negative in ordering:
@@ -127,7 +129,7 @@ class IterableBackend:
 
     Attributes:
         LOOKUP_EXPR_OPERATOR_MAP (dict): Mapping of lookup expressions
-            to corresponding operator functions
+            to corresponding operator functions.
     """
 
     LOOKUP_EXPR_OPERATOR_MAP = {
@@ -150,11 +152,15 @@ class IterableBackend:
         for the key path. For example, 'user.profile.name' would access
         item['user']['profile']['name'].
 
-        :param item: The item to extract value from (dict-like object)
-        :param key: The key path using dot notation (e.g., 'user.name')
-        :type key: str
-        :return: The nested value
-        :raises KeyError: If any part of the key path doesn't exist
+        Args:
+            item: The item to extract value from (dict-like object).
+            key (str): The key path using dot notation (e.g., 'user.name').
+
+        Returns:
+            The nested value.
+
+        Raises:
+            KeyError: If any part of the key path doesn't exist.
         """
         for k in key.split("."):
             item = item[k]
@@ -169,15 +175,15 @@ class IterableBackend:
         handles nested field access. Returns True on errors (KeyError, TypeError)
         to maintain a permissive filtering approach.
 
-        :param item: The item to check (dict-like object)
-        :param key: The key to filter on (supports dot notation)
-        :type key: str
-        :param value: The value to match against
-        :param lookup_expr: The lookup expression for matching (e.g., '', '!',
-                           'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in')
-        :type lookup_expr: str
-        :return: True if item matches the criteria, True on error (permissive)
-        :rtype: bool
+        Args:
+            item: The item to check (dict-like object).
+            key (str): The key to filter on (supports dot notation).
+            value: The value to match against.
+            lookup_expr (str): The lookup expression for matching (e.g., '', '!',
+                'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in').
+
+        Returns:
+            bool: True if item matches the criteria, True on error (permissive).
         """
         try:
             item_value = cls._get_nested_value(item, key)
@@ -194,16 +200,15 @@ class IterableBackend:
         Preserves the original data type of the input (list, tuple, set) while
         filtering the elements. For other iterable types, returns a filter object.
 
-        :param data: The iterable data to filter
-        :type data: iterable
-        :param key: The key to filter on (supports dot notation for nested access)
-        :type key: str
-        :param value: The value to filter by
-        :param lookup_expr: The lookup expression for filtering (e.g., '', '!',
-                           'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in')
-        :type lookup_expr: str
-        :return: Filtered iterable of the same type as input (or filter object)
-        :rtype: same as input data type or filter object
+        Args:
+            data (iterable): The iterable data to filter.
+            key (str): The key to filter on (supports dot notation for nested access).
+            value: The value to filter by.
+            lookup_expr (str): The lookup expression for filtering (e.g., '', '!',
+                'gte', 'lte', 'gt', 'lt', 'contains', 'icontains', 'in').
+
+        Returns:
+            The filtered iterable of the same type as input (or a filter object).
         """
 
         ret = filter(
@@ -222,13 +227,14 @@ class IterableBackend:
     def order(cls, data, ordering):
         """Sort the data by multiple keys.
 
-        :param data: The iterable data to sort
-        :param ordering: List of tuples containing (key, is_reverse) pairs
-                        where key is the field name to sort by (supports dot notation)
-                        and is_reverse is a boolean indicating reverse order
-        :type ordering: list of tuples
-        :return: Sorted data of the same type as input
-        :rtype: same as input data type
+        Args:
+            data (iterable): The iterable data to sort.
+            ordering (list): List of tuples containing (key, is_reverse) pairs
+                where key is the field name to sort by (supports dot notation)
+                and is_reverse is a boolean indicating reverse order.
+
+        Returns:
+            The sorted data of the same type as input.
         """
         try:
             for key, is_reverse in ordering[::-1]:

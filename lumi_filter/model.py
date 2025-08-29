@@ -22,13 +22,15 @@ class MetaModel:
     including schema introspection and field mapping for both Peewee and
     Pydantic models.
 
-    :param schema: The model schema (Peewee or Pydantic model class)
-    :param fields: List of specific fields to include
-    :type fields: list or None
-    :param extra_field: Additional custom filter fields
-    :type extra_field: dict or None
-    :param ordering_extra_field: Extra fields allowed for ordering
-    :type ordering_extra_field: set or None
+    Args:
+        schema: The model schema (Peewee or Pydantic model class)
+        fields (list, optional): List of specific fields to include
+
+    Features:
+        - Automatic field detection from Peewee and Pydantic models
+        - Nested Pydantic model support with dot notation
+        - Field filtering based on specified field list
+        - Intelligent field type mapping via ClassHierarchyMapping
     """
 
     def __init__(self, schema=None, fields=None):
@@ -38,8 +40,8 @@ class MetaModel:
     def get_filter_fields(self):
         """Generate filter fields from schema and extra fields.
 
-        :return: Dictionary mapping field names to filter field instances
-        :rtype: dict
+        Returns:
+            dict: Dictionary mapping field names to filter field instances
         """
         ret = {}
 
@@ -54,26 +56,30 @@ class MetaModel:
     def _is_peewee_model(self, schema):
         """Check if schema is a Peewee model.
 
-        :param schema: The schema to check
-        :return: True if schema is a Peewee model class
-        :rtype: bool
+        Args:
+            schema: The schema to check
+
+        Returns:
+            bool: True if schema is a Peewee model class
         """
         return isinstance(schema, type) and issubclass(schema, peewee.Model)
 
     def _is_pydantic_model(self, schema):
         """Check if schema is a Pydantic model.
 
-        :param schema: The schema to check
-        :return: True if schema is a Pydantic model class
-        :rtype: bool
+        Args:
+            schema: The schema to check
+
+        Returns:
+            bool: True if schema is a Pydantic model class
         """
         return isinstance(schema, type) and issubclass(schema, pydantic.BaseModel)
 
     def _process_peewee_fields(self):
         """Process Peewee model fields into filter fields.
 
-        :return: Dictionary mapping field names to filter field instances
-        :rtype: dict
+        Returns:
+            dict: Dictionary mapping field names to filter field instances
         """
         ret = {}
         for attr_name, pw_field in self.schema._meta.fields.items():
@@ -87,8 +93,8 @@ class MetaModel:
     def _process_pydantic_fields(self):
         """Process Pydantic model fields into filter fields with nested support.
 
-        :return: Dictionary mapping field names to filter field instances
-        :rtype: dict
+        Returns:
+            dict: Dictionary mapping field names to filter field instances
         """
         ret = {}
         stack = [(self.schema.model_fields, "")]
@@ -117,9 +123,11 @@ class MetaModel:
     def _is_nested_pydantic_model(self, pydantic_field):
         """Check if a Pydantic field is a nested model.
 
-        :param pydantic_field: The Pydantic field to check
-        :return: True if field represents a nested Pydantic model
-        :rtype: bool
+        Args:
+            pydantic_field: The Pydantic field to check
+
+        Returns:
+            bool: True if field represents a nested Pydantic model
         """
         return isinstance(pydantic_field.annotation, type) and issubclass(pydantic_field.annotation, pydantic.BaseModel)
 
@@ -236,9 +244,9 @@ class Model(metaclass=ModelMeta):
     to different types of data sources including Peewee ORM queries,
     Pydantic models, and iterable data structures.
 
-    :param data: The data to filter and order
-    :param request_args: Dictionary of filter and ordering parameters
-    :type request_args: dict
+    Args:
+        data: The data to filter and order
+        request_args (dict): Dictionary of filter and ordering parameters
     """
 
     def __init__(self, data, request_args):
@@ -249,10 +257,12 @@ class Model(metaclass=ModelMeta):
     def cls_filter(cls, data, request_args):
         """Apply filters to data based on request arguments.
 
-        :param data: The data to filter
-        :param request_args: Dictionary of filter parameters
-        :type request_args: dict
-        :return: Filtered data
+        Args:
+            data: The data to filter
+            request_args (dict): Dictionary of filter parameters
+
+        Returns:
+            Filtered data
         """
         backend = cls._get_backend(data)
 
@@ -279,10 +289,12 @@ class Model(metaclass=ModelMeta):
     def cls_order(cls, data, request_args):
         """Apply ordering to data based on request arguments.
 
-        :param data: The data to order
-        :param request_args: Dictionary containing ordering parameters
-        :type request_args: dict
-        :return: Ordered data
+        Args:
+            data: The data to order
+            request_args (dict): Dictionary containing ordering parameters
+
+        Returns:
+            Ordered data
         """
         ordering = request_args.get("ordering", "")
         if not ordering:
@@ -312,8 +324,8 @@ class Model(metaclass=ModelMeta):
     def filter(self):
         """Apply filters and return self for chaining.
 
-        :return: Self for method chaining
-        :rtype: Model
+        Returns:
+            Model: Self for method chaining
         """
         self.data = self.__class__.cls_filter(self.data, self.request_args)
         return self
@@ -321,8 +333,8 @@ class Model(metaclass=ModelMeta):
     def order(self):
         """Apply ordering and return self for chaining.
 
-        :return: Self for method chaining
-        :rtype: Model
+        Returns:
+            Model: Self for method chaining
         """
         self.data = self.__class__.cls_order(self.data, self.request_args)
         return self
@@ -330,6 +342,7 @@ class Model(metaclass=ModelMeta):
     def result(self):
         """Get the final filtered and ordered data.
 
-        :return: The processed data
+        Returns:
+            The processed data
         """
         return self.data

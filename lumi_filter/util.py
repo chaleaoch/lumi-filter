@@ -2,6 +2,15 @@
 
 This module provides utility classes that extend standard mapping behavior
 to support advanced lookup patterns and inheritance-based resolution.
+
+Classes:
+    ClassHierarchyMapping: Mapping that supports class hierarchy lookups via MRO
+
+Features:
+    - Method Resolution Order (MRO) based lookups
+    - Union type support for field type resolution
+    - Inheritance-aware field mapping
+    - Standard MutableMapping interface compliance
 """
 
 import inspect
@@ -17,8 +26,8 @@ class ClassHierarchyMapping(MutableMapping):
     Python's Method Resolution Order (MRO), allowing for inheritance-based
     field type resolution.
 
-    :param mapping: Initial mapping data
-    :type mapping: dict or None
+    Args:
+        mapping (dict, optional): Initial mapping data
     """
 
     def __init__(self, mapping=None):

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>lumi_filter.field &#8212; lumi_filter 0.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=10f1778b"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for lumi_filter.field</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">decimal</span>
+
+
+<div class="viewcode-block" id="FilterField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.FilterField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FilterField</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for filter fields with common functionality.</span>
+
+<span class="sd">    This class provides the foundation for all filter field types,</span>
+<span class="sd">    handling basic parsing and validation operations. It defines the</span>
+<span class="sd">    interface for field-specific value parsing and validation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Set of supported lookup expressions</span>
+<span class="sd">            for filtering operations. Includes equality, negation, comparisons,</span>
+<span class="sd">            containment checks, and list membership.</span>
+<span class="sd">        request_arg_name (str or None): Name of the request argument to bind to.</span>
+<span class="sd">            If None, uses the field name from the filter class.</span>
+<span class="sd">        source (str or None): Source field or attribute name in the data model.</span>
+<span class="sd">            If None, uses the field name from the filter class.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        request_arg_name (str, optional): Name of the request argument.</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        source (str, optional): Source field or attribute name.</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;contains&quot;</span><span class="p">,</span> <span class="s2">&quot;icontains&quot;</span><span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_arg_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_arg_name</span> <span class="o">=</span> <span class="n">request_arg_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+
+<div class="viewcode-block" id="FilterField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.FilterField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse and validate the input value.</span>
+
+<span class="sd">        This is the base implementation that accepts any value as valid.</span>
+<span class="sd">        Subclasses should override this method to provide type-specific</span>
+<span class="sd">        parsing and validation logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: The input value to parse and validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value: The parsed and potentially converted value</span>
+<span class="sd">                - is_valid (bool): True if the value is valid, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IntField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.IntField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Integer field filter for numeric filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of integer values for filtering operations.</span>
+<span class="sd">    Supports numerical comparison operations like equality, greater than,</span>
+<span class="sd">    less than, and list membership. String representations of integers</span>
+<span class="sd">    are automatically converted to int type.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact equality</span>
+<span class="sd">            - &quot;!&quot;: Not equal</span>
+<span class="sd">            - &quot;gt&quot;: Greater than</span>
+<span class="sd">            - &quot;lt&quot;: Less than</span>
+<span class="sd">            - &quot;gte&quot;: Greater than or equal</span>
+<span class="sd">            - &quot;lte&quot;: Less than or equal</span>
+<span class="sd">            - &quot;in&quot;: List membership</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">})</span>
+
+<div class="viewcode-block" id="IntField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.IntField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse string or numeric input to integer.</span>
+
+<span class="sd">        Attempts to convert the input value to an integer type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Input value to convert to integer. Can be string, int,</span>
+<span class="sd">                or other numeric types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value (int or None): The integer value if conversion</span>
+<span class="sd">                  succeeds, None if it fails</span>
+<span class="sd">                - is_valid (bool): True if conversion succeeds, False otherwise</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; field = IntField()</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;123&quot;)</span>
+<span class="sd">            (123, True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;invalid&quot;)</span>
+<span class="sd">            (None, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StrField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.StrField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StrField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;String field filter for text-based filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of string values for filtering operations.</span>
+<span class="sd">    Supports comprehensive text matching operations including exact matches,</span>
+<span class="sd">    case-sensitive and case-insensitive containment checks, comparisons,</span>
+<span class="sd">    and list membership.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact equality (case-sensitive)</span>
+<span class="sd">            - &quot;!&quot;: Not equal</span>
+<span class="sd">            - &quot;gt&quot;: Greater than (lexicographical)</span>
+<span class="sd">            - &quot;lt&quot;: Less than (lexicographical)</span>
+<span class="sd">            - &quot;gte&quot;: Greater than or equal (lexicographical)</span>
+<span class="sd">            - &quot;lte&quot;: Less than or equal (lexicographical)</span>
+<span class="sd">            - &quot;in&quot;: List membership</span>
+<span class="sd">            - &quot;contains&quot;: Case-sensitive substring match</span>
+<span class="sd">            - &quot;icontains&quot;: Case-insensitive substring match</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;contains&quot;</span><span class="p">,</span> <span class="s2">&quot;icontains&quot;</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="DecimalField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DecimalField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DecimalField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decimal field filter for precise numeric filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of decimal values for filtering operations.</span>
+<span class="sd">    Provides precise decimal arithmetic suitable for financial calculations,</span>
+<span class="sd">    scientific measurements, and other scenarios requiring exact decimal</span>
+<span class="sd">    representation without floating-point precision issues.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact equality</span>
+<span class="sd">            - &quot;!&quot;: Not equal</span>
+<span class="sd">            - &quot;gt&quot;: Greater than</span>
+<span class="sd">            - &quot;lt&quot;: Less than</span>
+<span class="sd">            - &quot;gte&quot;: Greater than or equal</span>
+<span class="sd">            - &quot;lte&quot;: Less than or equal</span>
+<span class="sd">            - &quot;in&quot;: List membership</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">})</span>
+
+<div class="viewcode-block" id="DecimalField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DecimalField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse string or numeric input to Decimal.</span>
+
+<span class="sd">        Converts the input value to a decimal.Decimal object for precise</span>
+<span class="sd">        arithmetic operations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Input value to convert to Decimal. Can be string, int,</span>
+<span class="sd">                float, or other numeric types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value (Decimal or None): The Decimal value if conversion</span>
+<span class="sd">                  succeeds, None if it fails</span>
+<span class="sd">                - is_valid (bool): True if conversion succeeds, False otherwise</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; field = DecimalField()</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;123.45&quot;)</span>
+<span class="sd">            (Decimal(&#39;123.45&#39;), True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;invalid&quot;)</span>
+<span class="sd">            (None, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">decimal</span><span class="o">.</span><span class="n">Decimal</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="n">decimal</span><span class="o">.</span><span class="n">InvalidOperation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BooleanField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.BooleanField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BooleanField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean field filter for true/false filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of boolean values for filtering operations.</span>
+<span class="sd">    Accepts various string representations of boolean values and converts them</span>
+<span class="sd">    to proper Python boolean types. Supports flexible input formats commonly</span>
+<span class="sd">    used in web applications and configuration files.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact equality (only supports exact boolean matching)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">})</span>
+
+<div class="viewcode-block" id="BooleanField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.BooleanField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse various representations to boolean.</span>
+
+<span class="sd">        Converts string and boolean inputs to Python boolean values.</span>
+<span class="sd">        Accepts multiple common representations of true/false values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Input value to convert to boolean. Can be bool, string,</span>
+<span class="sd">                or other types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value (bool or None): The boolean value if conversion</span>
+<span class="sd">                  succeeds, None if it fails</span>
+<span class="sd">                - is_valid (bool): True if conversion succeeds, False otherwise</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Accepted true values: &#39;true&#39;, &#39;1&#39;, &#39;yes&#39;, &#39;on&#39; (case-insensitive)</span>
+<span class="sd">            Accepted false values: &#39;false&#39;, &#39;0&#39;, &#39;no&#39;, &#39;off&#39; (case-insensitive)</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; field = BooleanField()</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;true&quot;)</span>
+<span class="sd">            (True, True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;0&quot;)</span>
+<span class="sd">            (False, True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;invalid&quot;)</span>
+<span class="sd">            (None, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">lower_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">lower_value</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">lower_value</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DateField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DateField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DateField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Date field filter for date-only filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of date values for filtering operations.</span>
+<span class="sd">    Accepts both datetime.date objects and ISO format date strings. Provides</span>
+<span class="sd">    date-based comparisons without time components.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact date equality</span>
+<span class="sd">            - &quot;!&quot;: Not equal</span>
+<span class="sd">            - &quot;gt&quot;: After date (greater than)</span>
+<span class="sd">            - &quot;lt&quot;: Before date (less than)</span>
+<span class="sd">            - &quot;gte&quot;: On or after date (greater than or equal)</span>
+<span class="sd">            - &quot;lte&quot;: On or before date (less than or equal)</span>
+<span class="sd">            - &quot;in&quot;: Date list membership</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">})</span>
+
+<div class="viewcode-block" id="DateField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DateField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse datetime.date objects or ISO date strings.</span>
+
+<span class="sd">        Converts input to datetime.date objects. Accepts existing date objects</span>
+<span class="sd">        or parses ISO format date strings (YYYY-MM-DD).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Input value to convert to date. Can be datetime.date object</span>
+<span class="sd">                or string in ISO format (YYYY-MM-DD).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value (datetime.date or None): The date value if conversion</span>
+<span class="sd">                  succeeds, None if it fails</span>
+<span class="sd">                - is_valid (bool): True if conversion succeeds, False otherwise</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; field = DateField()</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;2023-12-25&quot;)</span>
+<span class="sd">            (datetime.date(2023, 12, 25), True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;invalid-date&quot;)</span>
+<span class="sd">            (None, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">(),</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DateTimeField">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DateTimeField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DateTimeField</span><span class="p">(</span><span class="n">FilterField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DateTime field filter for date and time filtering operations.</span>
+
+<span class="sd">    Handles parsing and validation of datetime values for filtering operations.</span>
+<span class="sd">    Accepts both datetime.datetime objects and ISO format datetime strings.</span>
+<span class="sd">    Provides timestamp-based comparisons including both date and time components.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        SUPPORTED_LOOKUP_EXPR (frozenset): Supported lookup expressions:</span>
+<span class="sd">            - &quot;&quot; (empty): Exact datetime equality</span>
+<span class="sd">            - &quot;!&quot;: Not equal</span>
+<span class="sd">            - &quot;gt&quot;: After datetime (greater than)</span>
+<span class="sd">            - &quot;lt&quot;: Before datetime (less than)</span>
+<span class="sd">            - &quot;gte&quot;: On or after datetime (greater than or equal)</span>
+<span class="sd">            - &quot;lte&quot;: On or before datetime (less than or equal)</span>
+<span class="sd">            - &quot;in&quot;: DateTime list membership</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_LOOKUP_EXPR</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="s2">&quot;lt&quot;</span><span class="p">,</span> <span class="s2">&quot;gte&quot;</span><span class="p">,</span> <span class="s2">&quot;lte&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">})</span>
+
+<div class="viewcode-block" id="DateTimeField.parse_value">
+<a class="viewcode-back" href="../../lumi_filter.html#lumi_filter.field.DateTimeField.parse_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse datetime.datetime objects or ISO datetime strings.</span>
+
+<span class="sd">        Converts input to datetime.datetime objects. Accepts existing datetime objects</span>
+<span class="sd">        or parses ISO format datetime strings (YYYY-MM-DDTHH:MM:SS).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Input value to convert to datetime. Can be datetime.datetime object</span>
+<span class="sd">                or string in ISO format (YYYY-MM-DDTHH:MM:SS).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing (parsed_value, is_valid) where:</span>
+<span class="sd">                - parsed_value (datetime.datetime or None): The datetime value if</span>
+<span class="sd">                  conversion succeeds, None if it fails</span>
+<span class="sd">                - is_valid (bool): True if conversion succeeds, False otherwise</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; field = DateTimeField()</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;2023-12-25T14:30:00&quot;)</span>
+<span class="sd">            (datetime.datetime(2023, 12, 25, 14, 30), True)</span>
+<span class="sd">            &gt;&gt;&gt; field.parse_value(&quot;invalid-datetime&quot;)</span>
+<span class="sd">            (None, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S&quot;</span><span class="p">),</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">lumi_filter</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../lumi_filter.html">lumi_filter package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, chaleaoch.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

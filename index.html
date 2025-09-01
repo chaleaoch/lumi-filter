@@ -10,7 +10,7 @@
       
       
       
-        <link rel="next" href="api/backend/">
+        <link rel="next" href="quick_start/">
       
       
       <link rel="icon" href="assets/images/favicon.png">
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-lumi-filter" class="md-skip">
+        <a href="#lumi_filter" class="md-skip">
           Skip to content
         </a>
       
@@ -239,6 +239,25 @@
   
   
   
+    <li class="md-tabs__item">
+      <a href="quick_start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quick Start
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
     
     
       <li class="md-tabs__item">
@@ -317,6 +336,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="." class="md-nav__link md-nav__link--active">
         
   
@@ -329,6 +361,140 @@
 
       </a>
       
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-choose-lumi_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Choose lumi_filter?
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Choose lumi_filter?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unified-filtering-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Filtering Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Unified Filtering Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-filtering-peewee" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Filtering (Peewee)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-filtering-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      List Filtering (Python)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-database-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Database Queries
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-iterable-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Iterable Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rich-filtering-expressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rich Filtering Expressions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatic-type-detection-and-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic Type Detection and Mapping
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#todo" class="md-nav__link">
+    <span class="md-ellipsis">
+      TODO
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quick_start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -353,10 +519,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -369,8 +535,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             API Reference
           </label>
@@ -563,8 +729,110 @@
   
 
 
-<h1 id="welcome-to-lumi-filter">Welcome to lumi-filter</h1>
-<p>lumi-filter is a library for filtering data using a model-based approach.</p>
+<h1 id="lumi_filter">lumi_filter</h1>
+<blockquote>
+<p>For specific use cases, please refer to the examples:
+<a href="https://github.com/chaleaoch/lumi_filter/tree/main/example">Examples</a></p>
+</blockquote>
+<p>lumi_filter is a powerful and flexible data filtering library designed to simplify how you filter and sort data across different data sources in your Python applications. Whether you're dealing with database queries, API responses, or in-memory data structures, lumi_filter provides a unified, intuitive interface that makes complex filtering operations effortless. Inspired by Django REST Framework's filtering system, lumi_filter has been redesigned to support multiple backends and data sources. Flask-friendly and compatible.</p>
+<p>lumi_filter is a model-based filtering library that bridges the gap between different data sources and filtering needs. At its core, it provides a consistent API for filtering the following data sources:</p>
+<ul>
+<li><strong>Peewee ORM queries</strong> - Direct database filtering through automatic SQL generation</li>
+<li><strong>Pydantic models</strong> - Filter structured data with type validation</li>
+<li><strong>Iterable data structures</strong> - Filter lists, dictionaries, and other Python collections</li>
+</ul>
+<p>This library eliminates the need to write different filtering logic for each data source, allowing you to define filtering requirements once and apply them universally.</p>
+<h2 id="why-choose-lumi_filter">Why Choose lumi_filter?</h2>
+<h3 id="unified-filtering-interface">Unified Filtering Interface</h3>
+<p>Suppose you need to implement filtering functionality throughout your application that needs to handle both database records and API responses. Without lumi_filter, you would typically need to write separate filtering logic for each data source:</p>
+<h4 id="database-filtering-peewee">Database Filtering (Peewee)</h4>
+<pre><code class="language-python">query = Product.select().where(Product.name.contains(&quot;apple&quot;) &amp; Product.price &gt;= 100)
+</code></pre>
+<h4 id="list-filtering-python">List Filtering (Python)</h4>
+<pre><code class="language-python">filtered_products = [p for p in products if &quot;apple&quot; in p[&quot;name&quot;] and p[&quot;price&quot;] &gt;= 100]
+</code></pre>
+<p>With lumi_filter, you define the filtering model once and use it everywhere:</p>
+<pre><code class="language-python">class FilterProduct(Model):
+    name = StrField(source=&quot;name&quot;)
+    price = DecimalField(source=&quot;price&quot;)
+</code></pre>
+<h4 id="for-database-queries">For Database Queries</h4>
+<pre><code class="language-python">db_filter = FilterProduct(Product.select(), request.args)
+filtered_query = db_filter.filter().result()
+</code></pre>
+<h4 id="for-iterable-data">For Iterable Data</h4>
+<pre><code class="language-python">list_filter = FilterProduct(products_list, request.args)
+filtered_list = list_filter.filter().result()
+</code></pre>
+<h2 id="rich-filtering-expressions">Rich Filtering Expressions</h2>
+<p>lumi_filter supports a comprehensive set of filtering operators that go beyond simple equality checks:</p>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>Exact match</td>
+<td>name=Apple</td>
+</tr>
+<tr>
+<td>__in</td>
+<td>In value list</td>
+<td>name__in=Apple,Orange</td>
+</tr>
+<tr>
+<td>__nin</td>
+<td>Not in value list</td>
+<td>name__nin=Apple,Orange</td>
+</tr>
+<tr>
+<td>__gte</td>
+<td>Greater than or equal</td>
+<td>price__gte=100</td>
+</tr>
+<tr>
+<td>__lte</td>
+<td>Less than or equal</td>
+<td>price__lte=500</td>
+</tr>
+<tr>
+<td>__contains</td>
+<td>Contains substring</td>
+<td>name__contains=apple</td>
+</tr>
+<tr>
+<td>__startswith</td>
+<td>Starts with</td>
+<td>name__startswith=A</td>
+</tr>
+<tr>
+<td>__endswith</td>
+<td>Ends with</td>
+<td>name__endswith=e</td>
+</tr>
+</tbody>
+</table>
+<h2 id="automatic-type-detection-and-mapping">Automatic Type Detection and Mapping</h2>
+<p>The library intelligently detects field types and maps them to appropriate filter fields, supporting:</p>
+<ul>
+<li>String fields with pattern matching</li>
+<li>Numeric fields with range comparisons</li>
+<li>Date/time fields with temporal filtering</li>
+<li>Boolean fields with truthiness filtering</li>
+<li>Nested fields with dot notation support</li>
+</ul>
+<h2 id="todo">TODO</h2>
+<ul>
+<li>[ ] Support for pagination</li>
+<li>[ ] Field-level permission control</li>
+<li>[ ] Field-level custom filtering</li>
+<li>[ ] Support for more ORMs (e.g., SQLAlchemy)</li>
+</ul>
 
 
 

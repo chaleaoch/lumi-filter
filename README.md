@@ -2,7 +2,7 @@
 <!-- GitHub Actions Badge -->
 ![CI](https://github.com/chaleaoch/lumi_filter/workflows/CI%20Tests%20and%20Coverage/badge.svg)
 [![codecov](https://codecov.io/github/chaleaoch/lumi-filter/graph/badge.svg?token=Q7D778UG8U)](https://codecov.io/github/chaleaoch/lumi-filter)
-[![PyPI version](https://img.shields.io/pypi/v/包名.svg)](https://pypi.org/project/包名/)
+[![PyPI version](https://img.shields.io/pypi/v/lumi-filter.svg)](https://pypi.org/project/lumi-filter/)
 
 > For specific use cases, please refer to the examples:
 [Examples](https://github.com/chaleaoch/lumi_filter/tree/main/example)

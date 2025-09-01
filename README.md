@@ -1,9 +1,7 @@
 # lumi_filter
 <!-- GitHub Actions Badge -->
 ![CI](https://github.com/chaleaoch/lumi_filter/workflows/CI%20Tests%20and%20Coverage/badge.svg)
-
-<!-- Codecov Badge -->
-[![codecov](https://codecov.io/gh/chaleaoch/lumi_filter/branch/main/graph/badge.svg)](https://codecov.io/gh/chaleaoch/lumi_filter)
+[![codecov](https://codecov.io/github/chaleaoch/lumi-filter/graph/badge.svg?token=Q7D778UG8U)](https://codecov.io/github/chaleaoch/lumi-filter)
 
 > For specific use cases, please refer to the examples:
 [Examples](https://github.com/chaleaoch/lumi_filter/tree/main/example)
